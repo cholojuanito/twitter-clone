@@ -17,7 +17,7 @@ class User with ChangeNotifier {
     notifyListeners();
   }
 
-  Media profilePic = Media(_defaultProfileURL, MediaType.Image);
+  Media profilePic;
   void changeProfilePic(String path) {
     this.profilePic = Media(path, MediaType.Image);
     notifyListeners();
@@ -29,8 +29,9 @@ class User with ChangeNotifier {
   Story story;
   DateTime created = DateTime.now();
 
-  static const String _defaultProfileURL = '';
+  static const String defaultProfileURL = 'assets/images/default_profile.png';
 
+  // TODO add a total num tweets member
   User(
     this.id,
     this.alias,
@@ -44,6 +45,9 @@ class User with ChangeNotifier {
   }) {
     if (this.created == null) {
       this.created = DateTime.now();
+    }
+    if (this.profilePic == null) {
+      this.profilePic = Media(defaultProfileURL, MediaType.Image);
     }
   }
 

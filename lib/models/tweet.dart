@@ -1,5 +1,7 @@
 import 'dart:core';
 
+import 'package:timeago/timeago.dart' as timeago;
+
 import 'package:flutter/widgets.dart';
 import 'package:twitter/models/linked_items.dart';
 import 'package:uuid/uuid.dart';
@@ -21,13 +23,16 @@ class Tweet with ChangeNotifier implements Comparable<Tweet> {
   Media media;
   DateTime created;
 
+  String getCreatedRelativeTime() =>
+      timeago.format(this.created, locale: 'en_short');
+
   Tweet(
     this.id,
     this.authorId,
     this._message, {
-    this.hashtags,
-    this.mentions,
-    this.urls,
+    this.hashtags = const [],
+    this.mentions = const [],
+    this.urls = const [],
     this.media,
     this.created,
   }) {

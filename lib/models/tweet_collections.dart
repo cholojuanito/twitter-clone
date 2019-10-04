@@ -7,23 +7,22 @@ import 'package:twitter/models/tweet.dart';
 /// The list is sorted by when the post was created.
 /// I.e. newer posts are at the beginning of the list
 abstract class TweetCollection with ChangeNotifier {
-  List<Tweet> _tweets;
-  UnmodifiableListView get tweets => UnmodifiableListView(_tweets);
+  List<Tweet> tweets;
 
-  TweetCollection(this._tweets);
+  TweetCollection(this.tweets);
 
   /// Adds a post and ensures the list is still sorted
   void add(Tweet p) {
-    this._tweets.add(p);
-    this._tweets.sort((a, b) => a.compareTo(b));
+    this.tweets.add(p);
+    this.tweets.sort((a, b) => a.compareTo(b));
     notifyListeners();
   }
 
-  Tweet tweetAt(int idx) => this._tweets[idx];
+  Tweet tweetAt(int idx) => this.tweets[idx];
 
   bool remove(Tweet p) {
     notifyListeners();
-    return this._tweets.remove(p);
+    return this.tweets.remove(p);
   }
 
   // void clear();
@@ -38,6 +37,3 @@ class Feed extends TweetCollection {
 
   Feed(List<Tweet> tweets, {this.userId}) : super(tweets);
 }
-
-// For dummy data
-List<Tweet> dummyDataTweets = [];

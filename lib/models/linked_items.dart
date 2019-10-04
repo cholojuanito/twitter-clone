@@ -18,7 +18,7 @@ class Hashtag extends LinkedItem {
   final String word;
   List<String> postIds; // Ids of the posts that this hashtag is used in
 
-  Hashtag(String route, this.word, this.postIds, {String id})
+  Hashtag(String route, this.word, {this.postIds, String id})
       : super(route, id: id);
 }
 
