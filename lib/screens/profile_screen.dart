@@ -30,10 +30,10 @@ class _ProfileScreenState extends State<ProfileScreen>
   ProfileVM _vm;
   AuthVM _authVM;
   // These are for referencing from the scroll listeners
-  TweetListVM _feedVM;
-  TweetListVM _storyVM;
-  FollowingListVM _followersVM;
-  FollowingListVM _followingVM;
+  ListViewVM _feedVM;
+  ListViewVM _storyVM;
+  ListViewVM _followersVM;
+  ListViewVM _followingVM;
 
   ScrollController _feedScrollCntrlr;
   ScrollController _storyScrollCntrlr;
@@ -58,10 +58,10 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   @override
   void dispose() {
-    _feedScrollCntrlr.removeListener(_feedScrollListener);
-    _storyScrollCntrlr.removeListener(_storyScrollListener);
-    _followersScrollCntrlr.removeListener(_followersScrollListener);
-    _followingScrollCntrlr.removeListener(_followingScrollListener);
+    _feedScrollCntrlr?.removeListener(_feedScrollListener);
+    _storyScrollCntrlr?.removeListener(_storyScrollListener);
+    _followersScrollCntrlr?.removeListener(_followersScrollListener);
+    _followingScrollCntrlr?.removeListener(_followingScrollListener);
 
     _feedScrollCntrlr?.dispose();
     _storyScrollCntrlr?.dispose();
@@ -183,10 +183,10 @@ class _ProfileScreenState extends State<ProfileScreen>
     // currently logged in user
     bool _isLoggedInUser = _vm.user.alias == _authVM.getCurrentUser()?.alias;
 
-    _feedVM = TweetListVM(
-        _vm.user.feed.tweets, _authVM.getCurrentUser().id, _api, true);
-    _storyVM = TweetListVM(
-        _vm.user.story.tweets, _authVM.getCurrentUser().id, _api, false);
+    _feedVM = TweetListVM(_vm.user.feed.tweets, _authVM.getCurrentUser()?.id,
+        _api, TweetListType.feed);
+    _storyVM = TweetListVM(_vm.user.story.tweets, _authVM.getCurrentUser()?.id,
+        _api, TweetListType.story);
     _followersVM = FollowingListVM(_vm.user.followers, true);
     _followingVM = FollowingListVM(_vm.user.following, true);
 
@@ -194,11 +194,12 @@ class _ProfileScreenState extends State<ProfileScreen>
       appBar: AppBar(
         leading: _isLoggedInUser
             ? Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
                 child: CircleAvatar(
-                  child: _vm.user.profilePic.route == User.defaultProfileURL
-                      ? Image.asset(_vm.user.profilePic.route)
-                      : Image.file(File(
+                  backgroundImage: _vm.user.profilePic.route ==
+                          User.defaultProfileURL
+                      ? AssetImage(_vm.user.profilePic.route)
+                      : FileImage(File(
                           _vm.user.profilePic.route)), //TODO change to network
                 ),
               )

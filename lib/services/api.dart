@@ -3,6 +3,7 @@ import 'package:twitter/models/user.dart';
 import 'package:twitter/models/tweet.dart';
 
 abstract class Api {
+  static RegExp wordSplitRegex = RegExp(r'(?=[?.!,]+)|(?=\s+)');
   static RegExp urlRegex = RegExp(
       r'(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?');
   static RegExp hashtagRegex = RegExp(r'(?:|^)#[A-Za-z0-9\-\.\_]+(?:|$)');
@@ -26,6 +27,7 @@ abstract class Api {
   Future<Hashtag> getHashtag(String word);
   Future<bool> addTweetToHashtag(String word, String tweetId);
   Future<List<Tweet>> getTweetsByHashtag(String word);
+  Future<List<Tweet>> getNextTweetsByHashtag(String word, int pageNum);
 
   // Following methods
   Future<List<User>> getNextFollowers(String userId, int pageNum);

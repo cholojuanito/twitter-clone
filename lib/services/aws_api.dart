@@ -21,6 +21,8 @@ class AWSTwitterApi extends Api {
   Future<bool> createUser(User user) async {
     allUsers.add(user);
     userStories[user.id] = [];
+    userFollowersMap[user.id] = [];
+    userFollowingMap[user.id] = [];
     return true;
   }
 
@@ -36,7 +38,8 @@ class AWSTwitterApi extends Api {
 
   @override
   Future<User> getUserById(String id) async {
-    User user = allUsers.firstWhere((u) => u.id == id);
+    User user = allUsers.firstWhere((u) => u.id == id, orElse: () => null);
+    if (user == null) return null;
     user.followers = _buildUsersFollowers(user);
     user.following = _buildUsersFollowing(user);
     user.story = Story(_buildUsersStory(user));
@@ -46,7 +49,9 @@ class AWSTwitterApi extends Api {
 
   @override
   Future<User> getUserByAlias(String alias) async {
-    User user = allUsers.firstWhere((u) => u.alias == alias);
+    User user =
+        allUsers.firstWhere((u) => u.alias == alias, orElse: () => null);
+    if (user == null) return null;
     user.followers = _buildUsersFollowers(user);
     user.following = _buildUsersFollowing(user);
     user.story = Story(_buildUsersStory(user));
@@ -56,7 +61,8 @@ class AWSTwitterApi extends Api {
 
   @override
   Future<User> updateUser(User newUser) async {
-    User user = allUsers.firstWhere((u) => u.id == newUser.id);
+    User user =
+        allUsers.firstWhere((u) => u.id == newUser.id, orElse: () => null);
     user.feed = Feed(_buildUsersFeed(user));
     user.story = Story(_buildUsersStory(user));
 
@@ -65,8 +71,31 @@ class AWSTwitterApi extends Api {
 
   @override
   Future<bool> createTweet(Tweet tweet) async {
+    if (tweet.hashtags.length > 0) {
+      for (var hashtag in tweet.hashtags) {
+        var h = await getHashtag(hashtag.word);
+        if (h == null) {
+          await createHashtag(hashtag.word, tweet.id);
+        } else {
+          await addTweetToHashtag(hashtag.word, tweet.id);
+        }
+      }
+    }
+    if (tweet.mentions.length > 0) {
+      List toRemove = [];
+      for (int i = 0; i < tweet.mentions.length; i++) {
+        var m = tweet.mentions[i];
+        var u = await getUserByAlias(m.userId);
+        if (u == null) {
+          toRemove.add(i);
+        }
+      }
+      for (var idx in toRemove) {
+        tweet.mentions.removeAt(idx);
+      }
+    }
+    allTweets.add(tweet);
     userStories[tweet.authorId].add(tweet);
-    // if contains hashtags add tweet to those hashtags
     // Upload media
     return true;
   }
@@ -75,15 +104,15 @@ class AWSTwitterApi extends Api {
 
   @override
   Future<Tweet> getTweetById(String tweetId) async {
-    return allTweets.firstWhere((t) => t.id == tweetId);
+    return allTweets.firstWhere((t) => t.id == tweetId, orElse: () => null);
   }
 
   @override
   Future<bool> createHashtag(String word, String firstTweetId) async {
     // TODO maybe throw in checking for duplicates here?
-    Hashtag h = Hashtag(hashtagRoute, word, postIds: [firstTweetId]);
+    Hashtag h = Hashtag(hashtagRoute, word, tweetIds: [firstTweetId]);
     allHashtags.add(h);
-    hashtagTweets[h.word] = h.postIds;
+    hashtagTweets[h.word] = h.tweetIds;
     return true;
   }
 
@@ -92,7 +121,7 @@ class AWSTwitterApi extends Api {
     List<Tweet> _tweets = [];
     try {
       Hashtag h = await getHashtag(word);
-      for (var id in h.postIds) {
+      for (var id in h.tweetIds) {
         _tweets.add(await getTweetById(id));
       }
     } on StateError catch (e) {
@@ -102,16 +131,30 @@ class AWSTwitterApi extends Api {
   }
 
   @override
+  Future<List<Tweet>> getNextTweetsByHashtag(String word, int pageNum) async {
+    Hashtag h = await getHashtag(word);
+    List<String> ids = List.from(h.tweetIds.sublist(0, 3));
+    List<Tweet> moreItems = [];
+
+    for (var id in ids.sublist(0, 3)) {
+      moreItems
+          .add(allTweets.firstWhere((t) => t.id == id, orElse: () => null));
+    }
+
+    return moreItems;
+  }
+
+  @override
   Future<bool> addTweetToHashtag(String word, String tweetId) async {
     Hashtag h = await getHashtag(word);
     hashtagTweets[h.word].add(tweetId);
-    h.postIds = hashtagTweets[h.word];
+    h.tweetIds = hashtagTweets[h.word];
     return true;
   }
 
   @override
   Future<Hashtag> getHashtag(String word) async {
-    return allHashtags.firstWhere((h) => h.word == word);
+    return allHashtags.firstWhere((h) => h.word == word, orElse: () => null);
   }
 
   @override
@@ -175,10 +218,12 @@ class AWSTwitterApi extends Api {
   }
 
   List<Following> _buildUsersFollowers(User u) {
-    return userFollowersMap[u.id];
+    List<Following> list = userFollowersMap[u.id];
+    return list != null ? list : [];
   }
 
   List<Following> _buildUsersFollowing(User u) {
-    return userFollowingMap[u.id];
+    List<Following> list = userFollowingMap[u.id];
+    return list != null ? list : [];
   }
 }

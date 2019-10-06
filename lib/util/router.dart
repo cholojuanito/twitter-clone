@@ -4,12 +4,15 @@ import 'package:twitter/models/linked_items.dart';
 import 'package:twitter/models/tweet.dart';
 import 'package:twitter/models/user.dart';
 import 'package:twitter/screens/create_tweet_screen.dart';
+import 'package:twitter/screens/hashtag_screen.dart';
 import 'package:twitter/screens/login_screen.dart';
 import 'package:twitter/screens/profile_screen.dart';
 import 'package:twitter/screens/signup_screen.dart';
 import 'package:twitter/screens/tweet_screen.dart';
 import 'package:twitter/services/api.dart';
+import 'package:twitter/services/authentication.dart';
 import 'package:twitter/vms/create_tweet_vm.dart';
+import 'package:twitter/vms/list_view_vms.dart';
 import 'package:twitter/vms/profile_vm.dart';
 import 'package:twitter/vms/tweet_vm.dart';
 
@@ -79,12 +82,27 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case hashtagRoute:
       HashtagRouteArguments _args = settings.arguments;
       return MaterialPageRoute(builder: (context) {
-        return Container(
-          child: Center(
-            child:
-                Text('Tweets that contain the hashtag #${_args.hashtag.word}'),
-          ),
-        );
+        var _api = Provider.of<Api>(context);
+        var _auth = Provider.of<AuthenticationService>(context);
+        return FutureBuilder(
+            future: _api.getTweetsByHashtag(_args.hashtag.word),
+            builder: (context, snapshot) {
+              switch (snapshot.connectionState) {
+                case ConnectionState.done:
+                  var _vm = TweetListVM(snapshot.data,
+                      _auth.getCurrentUser().id, _api, TweetListType.hashtag,
+                      hashtag: _args.hashtag.word);
+                  return ChangeNotifierProvider<TweetListVM>.value(
+                    value: _vm,
+                    child: HashtagScreen(_args.hashtag.word),
+                  );
+                  break;
+                default:
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
+              }
+            });
       });
 
     default:

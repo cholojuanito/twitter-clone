@@ -27,12 +27,13 @@ class AWSAuthenticationService extends AuthenticationService {
     //   return _passResp;
     // }
 
-    try {
-      this.currUser = await AWSTwitterApi.getInstance().getUserByAlias(alias);
-    } on StateError catch (e) {
+    var user = await AWSTwitterApi.getInstance().getUserByAlias(alias);
+    if (user == null) {
       return AuthResponse(
           -1, 'No user exists with that alias. Try creating an account.');
     }
+    this.currUser = user;
+
     notifyListeners();
 
     return AuthResponse(0, 'Logging in...');

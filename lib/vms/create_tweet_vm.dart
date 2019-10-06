@@ -69,7 +69,7 @@ class CreateTweetVM extends BaseVM {
     List<Hashtag> _h = [];
     var matches = Api.hashtagRegex.allMatches(m).map((m) => m.group(0));
     for (var match in matches) {
-      _h.add(Hashtag(hashtagRoute, match.substring(1), postIds: [tweetId]));
+      _h.add(Hashtag(hashtagRoute, match.substring(1), tweetIds: [tweetId]));
     }
     return _h;
   }

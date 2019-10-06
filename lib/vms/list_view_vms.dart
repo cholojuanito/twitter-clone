@@ -18,16 +18,18 @@ abstract class ListViewVM<T> extends BaseVM {
 
   ListViewVM(this._items);
 
-  Future<void> getMoreItems();
+  Future getMoreItems();
 
-  Future<void> refresh();
+  Future refresh();
 }
 
 class TweetListVM extends ListViewVM<Tweet> with ChangeNotifier {
-  Api _api;
-  String _currUserId;
-  bool isFeed;
-  TweetListVM(List<Tweet> items, this._currUserId, this._api, this.isFeed)
+  Api api;
+  String currUserId;
+  String hashtag;
+  TweetListType type;
+  TweetListVM(List<Tweet> items, this.currUserId, this.api, this.type,
+      {this.hashtag})
       : super(items);
 
   @override
@@ -36,10 +38,12 @@ class TweetListVM extends ListViewVM<Tweet> with ChangeNotifier {
     notifyListeners();
 
     List<Tweet> nextItems = [];
-    if (isFeed) {
-      nextItems = await _api.getNextFeedTweets(_currUserId, currPageNum);
+    if (type == TweetListType.feed) {
+      nextItems = await api.getNextFeedTweets(currUserId, currPageNum);
+    } else if (type == TweetListType.story) {
+      nextItems = await api.getNextStoryTweets(currUserId, currPageNum);
     } else {
-      nextItems = await _api.getNextStoryTweets(_currUserId, currPageNum);
+      nextItems = await api.getTweetsByHashtag(hashtag);
     }
 
     await Future.delayed(const Duration(seconds: 3));
@@ -52,7 +56,7 @@ class TweetListVM extends ListViewVM<Tweet> with ChangeNotifier {
   }
 
   @override
-  Future<List<Tweet>> refresh() async {
+  Future refresh() async {
     setLoadingState(true);
     notifyListeners();
 
@@ -125,3 +129,5 @@ class FollowingListVM extends ListViewVM<Following> with ChangeNotifier {
     return null;
   }
 }
+
+enum TweetListType { feed, story, hashtag }

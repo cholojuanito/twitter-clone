@@ -140,10 +140,10 @@ class _TweetScreenState extends State<TweetScreen> {
                                 horizontal: 4.0, vertical: 8.0),
                             child: CircleAvatar(
                               maxRadius: 32.0,
-                              child: vm.author.profilePic.route ==
+                              backgroundImage: vm.author.profilePic.route ==
                                       User.defaultProfileURL
-                                  ? Image.asset(vm.author.profilePic.route)
-                                  : Image.network(vm.author.profilePic.route),
+                                  ? AssetImage(vm.author.profilePic.route)
+                                  : FileImage(File(vm.author.profilePic.route)),
                             ),
                           ),
                           Expanded(

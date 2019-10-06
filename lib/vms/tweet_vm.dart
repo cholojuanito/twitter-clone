@@ -58,67 +58,80 @@ class TweetVM extends BaseVM with ChangeNotifier {
 // find out if checking each hashtag or this method works best
   Text _createMessageWidget() {
     List<TextSpan> span = [];
-    List<String> words = this.tweet.message.split(' ');
+    List<String> words = this.tweet.message.split(Api.wordSplitRegex);
     words.forEach((w) {
-      if (this._isHashtag(w)) {
-        GestureRecognizer _r = TapGestureRecognizer()
-          ..onTap = () {
-            Future<Hashtag> future = _api.getHashtag(w.substring(1));
-            future.then((h) {
-              appNavKey.currentState
-                  .pushNamed(hashtagRoute, arguments: HashtagRouteArguments(h));
-            }).catchError(
-              (e) => print('Error when routing to hashtag! $e'),
-            );
-          };
-        _recognizers.add(_r);
-        span.add(
-          TextSpan(
-            text: '$w ',
-            style: _linkStyle,
-            recognizer: _r,
-          ),
-        );
-      } else if (this._isMention(w)) {
-        GestureRecognizer _r = TapGestureRecognizer()
-          ..onTap = () {
-            Future<User> future = _api.getUserByAlias(w.substring(1));
-            future.then((h) {
-              appNavKey.currentState
-                  .pushNamed(profileRoute, arguments: ProfileRouteArguments(h));
-            }).catchError(
-              (e) => print('Error when routing to profile! $e'),
-            );
-          };
-        _recognizers.add(_r);
-        span.add(
-          TextSpan(
-            text: '$w ',
-            style: _linkStyle,
-            recognizer: _r,
-          ),
-        );
-      } else if (this._isUrl(w)) {
-        GestureRecognizer _r = TapGestureRecognizer()
-          ..onTap = () {
-            if (w.contains(RegExp(r'(https:\/\/|http:\/\/)?'))) {
-              launch(w);
-            } else {
-              launch(Uri.encodeFull('https://${w}'));
-            }
-          };
-        _recognizers.add(_r);
-        span.add(
-          TextSpan(
-            text: '$w ',
-            style: _linkStyle,
-            recognizer: _r,
-          ),
-        );
+      if (w.length > 1) {
+        var _trimmed = w.trim();
+        if (this._isHashtag(_trimmed)) {
+          GestureRecognizer _r = TapGestureRecognizer()
+            ..onTap = () {
+              Future<Hashtag> future = _api.getHashtag(_trimmed.substring(1));
+              future.then((h) {
+                appNavKey.currentState.pushNamed(hashtagRoute,
+                    arguments: HashtagRouteArguments(h));
+              }).catchError(
+                (e) => print('Error when routing to hashtag! $e'),
+              );
+            };
+
+          _recognizers.add(_r);
+          span.add(
+            TextSpan(
+              text: '$w',
+              style: _linkStyle,
+              recognizer: _r,
+            ),
+          );
+        } else if (this._isMention(_trimmed)) {
+          GestureRecognizer _r = TapGestureRecognizer()
+            ..onTap = () {
+              Future<User> future = _api.getUserByAlias(_trimmed.substring(1));
+              future.then((h) {
+                appNavKey.currentState.pushNamed(profileRoute,
+                    arguments: ProfileRouteArguments(h));
+              }).catchError(
+                (e) => print('Error when routing to profile! $e'),
+              );
+            };
+
+          _recognizers.add(_r);
+          span.add(
+            TextSpan(
+              text: '$w',
+              style: _linkStyle,
+              recognizer: _r,
+            ),
+          );
+        } else if (this._isUrl(_trimmed)) {
+          GestureRecognizer _r = TapGestureRecognizer()
+            ..onTap = () {
+              if (_trimmed.contains(RegExp(r'(https:\/\/|http:\/\/)?'))) {
+                launch(_trimmed);
+              } else {
+                launch(Uri.encodeFull('https://${_trimmed}'));
+              }
+            };
+
+          _recognizers.add(_r);
+          span.add(
+            TextSpan(
+              text: '$w',
+              style: _linkStyle,
+              recognizer: _r,
+            ),
+          );
+        } else {
+          span.add(
+            TextSpan(
+              text: '$w',
+              style: _normalStyle,
+            ),
+          );
+        }
       } else {
         span.add(
           TextSpan(
-            text: '$w ',
+            text: '$w',
             style: _normalStyle,
           ),
         );
@@ -133,18 +146,22 @@ class TweetVM extends BaseVM with ChangeNotifier {
   }
 
   bool _isHashtag(String word) {
-    for (var h in this.tweet.hashtags) {
-      if (h.word == word.substring(1)) {
-        return true;
+    if (word.startsWith('#')) {
+      for (var h in this.tweet.hashtags) {
+        if (h.word == word.substring(1)) {
+          return true;
+        }
       }
     }
     return false;
   }
 
   bool _isMention(String word) {
-    for (var m in this.tweet.mentions) {
-      if (m.userId == word.substring(1)) {
-        return true;
+    if (word.startsWith('@')) {
+      for (var m in this.tweet.mentions) {
+        if (m.userId == word.substring(1)) {
+          return true;
+        }
       }
     }
     return false;
