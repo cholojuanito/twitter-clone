@@ -31,6 +31,7 @@ class _CreateTweetScreenState extends State<CreateTweetScreen> {
   @override
   void initState() {
     _tweetCntrlr = TextEditingController();
+    _tweetCntrlr.addListener(_tweetMessageListener);
     super.initState();
   }
 
@@ -71,10 +72,16 @@ class _CreateTweetScreenState extends State<CreateTweetScreen> {
     });
   }
 
-  void _updateCanTweet(bool allowTweet) {
-    setState(() {
-      _canTweet = allowTweet;
-    });
+  void _tweetMessageListener() {
+    if (_tweetCntrlr.text.isNotEmpty) {
+      setState(() {
+        _canTweet = true;
+      });
+    } else {
+      setState(() {
+        _canTweet = false;
+      });
+    }
   }
 
   @override
@@ -129,8 +136,6 @@ class _CreateTweetScreenState extends State<CreateTweetScreen> {
           body: LayoutBuilder(
             builder: (context, constraints) {
               return SingleChildScrollView(
-                controller: ScrollController(),
-                physics: ScrollPhysics(),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
                     minHeight: constraints.maxHeight,
@@ -147,13 +152,6 @@ class _CreateTweetScreenState extends State<CreateTweetScreen> {
                           margin: const EdgeInsets.symmetric(vertical: 8.0),
                           child: TextField(
                             controller: _tweetCntrlr,
-                            onChanged: (m) {
-                              if (m.isNotEmpty) {
-                                _updateCanTweet(true);
-                              } else {
-                                _updateCanTweet(false);
-                              }
-                            },
                             autofocus: true,
                             keyboardType: TextInputType.multiline,
                             maxLines: null,

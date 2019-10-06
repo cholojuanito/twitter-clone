@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:md2_tab_indicator/md2_tab_indicator.dart';
 import 'package:outline_material_icons/outline_material_icons.dart';
@@ -8,12 +10,10 @@ import 'package:twitter/theme/color.dart';
 import 'package:twitter/theme/icons.dart';
 import 'package:twitter/util/router.dart';
 import 'package:twitter/vms/auth_vm.dart';
-import 'package:twitter/vms/base_vm.dart';
 import 'package:twitter/vms/follow_vm.dart';
 import 'package:twitter/vms/tweet_vm.dart';
 import 'package:twitter/vms/list_view_vms.dart';
 import 'package:twitter/vms/profile_vm.dart';
-import 'package:twitter/widgets/list_item.dart';
 import 'package:twitter/widgets/tweet_list_item.dart';
 import 'package:twitter/widgets/user_list_item.dart';
 
@@ -121,18 +121,20 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget _buildFollowingList(User loggedInUser, bool isFollowersList) {
     return Consumer<FollowingListVM>(
       builder: (context, vm, _) {
+        var items = vm.items;
         return ListView.builder(
-          itemCount: vm.users.length,
+          itemCount: vm.users.length + 1,
           itemBuilder: (context, idx) {
-            if (vm.items.isEmpty) {
+            if (items.isEmpty) {
               return _buildEmptyListText();
+            } else if (idx == items.length) {
+              return _buildProgressIndicator(
+                  isFollowersList ? _followersVM : _followingVM);
             } else {
               var u = vm.users.elementAt(idx);
               var f = isFollowersList
-                  ? vm.items
-                      .firstWhere((f) => u.id == f.followerId, orElse: null)
-                  : vm.items
-                      .firstWhere((f) => u.id == f.followerId, orElse: null);
+                  ? items.firstWhere((f) => u.id == f.followerId, orElse: null)
+                  : items.firstWhere((f) => u.id == f.followerId, orElse: null);
               return ChangeNotifierProvider<FollowingVM>(
                 builder: (_) => FollowingVM(loggedInUser, u, theFollowing: f),
                 child: UserListItem(),
@@ -158,7 +160,17 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Widget _buildEmptyListText() {
     return Center(
-      child: Text('No data to show.'),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text(
+          'No data to show.',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.normal,
+            fontStyle: FontStyle.normal,
+          ),
+        ),
+      ),
     );
   }
 
@@ -186,7 +198,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                 child: CircleAvatar(
                   child: _vm.user.profilePic.route == User.defaultProfileURL
                       ? Image.asset(_vm.user.profilePic.route)
-                      : Image.network(_vm.user.profilePic.route),
+                      : Image.file(File(
+                          _vm.user.profilePic.route)), //TODO change to network
                 ),
               )
             : IconButton(

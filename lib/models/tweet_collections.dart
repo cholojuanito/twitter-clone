@@ -7,7 +7,7 @@ import 'package:twitter/models/tweet.dart';
 /// The list is sorted by when the post was created.
 /// I.e. newer posts are at the beginning of the list
 abstract class TweetCollection with ChangeNotifier {
-  List<Tweet> tweets;
+  List<Tweet> tweets = [];
 
   TweetCollection(this.tweets);
 

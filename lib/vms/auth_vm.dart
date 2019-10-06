@@ -13,29 +13,21 @@ class AuthVM extends BaseVM {
     return this._authService.getCurrentUser();
   }
 
-  Future<AuthResponse> login(email, password) async {
+  Future<AuthResponse> login(String name, String password) async {
     setLoadingState(true);
-    AuthResponse retVal = await this._authService.signIn(email, password);
+    AuthResponse retVal = await this._authService.signIn(name, password);
 
     setLoadingState(false);
     return retVal;
   }
 
-  Future<bool> signUp(email, alias, password) async {
+  Future<AuthResponse> signUp(String name, String alias, String password,
+      {String profilePicPath}) async {
     setLoadingState(true);
-    bool retVal;
     // Create a User/Session
-    AuthResponse res = await this._authService.signUp(email, alias, password);
-    switch (res.status) {
-      case 0:
-        retVal = true;
-        break;
-      case -1:
-      case 1:
-      default:
-        retVal = false;
-        break;
-    }
+    AuthResponse retVal = await this
+        ._authService
+        .signUp(name, alias, password, profilePicPath: profilePicPath);
 
     setLoadingState(false);
     return retVal;

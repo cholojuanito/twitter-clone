@@ -100,9 +100,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 },
               ),
               Container(
+                margin: const EdgeInsets.all(8.0),
                 child: GestureDetector(
                   child: Text('Sign up here'),
-                  onTap: () {},
+                  onTap: () {
+                    appNavKey.currentState.pushNamed(signUpRoute);
+                  },
                 ),
               )
             ],

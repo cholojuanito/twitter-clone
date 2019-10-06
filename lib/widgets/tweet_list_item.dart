@@ -144,7 +144,7 @@ class _TweetListItemState extends State<TweetListItem> {
                     backgroundImage:
                         vm.author.profilePic.route == User.defaultProfileURL
                             ? AssetImage(vm.author.profilePic.route)
-                            : NetworkImage(vm.author.profilePic.route),
+                            : FileImage(File(vm.author.profilePic.route)),
                   ),
                 ),
                 Column(

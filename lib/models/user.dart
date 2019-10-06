@@ -37,8 +37,8 @@ class User with ChangeNotifier {
     this.alias,
     this._fullName, {
     this.profilePic,
-    this.followers,
-    this.following,
+    this.followers = const [],
+    this.following = const [],
     this.feed,
     this.story,
     this.created,
@@ -48,6 +48,12 @@ class User with ChangeNotifier {
     }
     if (this.profilePic == null) {
       this.profilePic = Media(defaultProfileURL, MediaType.Image);
+    }
+    if (this.feed == null) {
+      this.feed = Feed([]);
+    }
+    if (this.story == null) {
+      this.story = Story([]);
     }
   }
 

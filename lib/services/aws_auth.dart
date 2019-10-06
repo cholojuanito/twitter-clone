@@ -39,8 +39,8 @@ class AWSAuthenticationService extends AuthenticationService {
   }
 
   @override
-  Future<AuthResponse> signUp(
-      String name, String alias, String password) async {
+  Future<AuthResponse> signUp(String name, String alias, String password,
+      {String profilePicPath}) async {
     AuthResponse _aliasResp = isUniqueAlias(alias);
     AuthResponse _passResp = isValidPassword(password);
 
@@ -53,6 +53,9 @@ class AWSAuthenticationService extends AuthenticationService {
     // }
 
     User newuser = User(Uuid().v4(), alias, name);
+    if (profilePicPath != null) {
+      newuser.changeProfilePic(profilePicPath);
+    }
     bool resp = await AWSTwitterApi.getInstance().createUser(newuser);
 
     this.currUser = newuser;

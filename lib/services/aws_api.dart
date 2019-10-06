@@ -20,6 +20,7 @@ class AWSTwitterApi extends Api {
   @override
   Future<bool> createUser(User user) async {
     allUsers.add(user);
+    userStories[user.id] = [];
     return true;
   }
 
@@ -82,6 +83,7 @@ class AWSTwitterApi extends Api {
     // TODO maybe throw in checking for duplicates here?
     Hashtag h = Hashtag(hashtagRoute, word, postIds: [firstTweetId]);
     allHashtags.add(h);
+    hashtagTweets[h.word] = h.postIds;
     return true;
   }
 
@@ -102,7 +104,8 @@ class AWSTwitterApi extends Api {
   @override
   Future<bool> addTweetToHashtag(String word, String tweetId) async {
     Hashtag h = await getHashtag(word);
-    h.postIds.add(tweetId);
+    hashtagTweets[h.word].add(tweetId);
+    h.postIds = hashtagTweets[h.word];
     return true;
   }
 

@@ -6,6 +6,7 @@ import 'package:twitter/models/user.dart';
 import 'package:twitter/screens/create_tweet_screen.dart';
 import 'package:twitter/screens/login_screen.dart';
 import 'package:twitter/screens/profile_screen.dart';
+import 'package:twitter/screens/signup_screen.dart';
 import 'package:twitter/screens/tweet_screen.dart';
 import 'package:twitter/services/api.dart';
 import 'package:twitter/vms/create_tweet_vm.dart';
@@ -13,6 +14,7 @@ import 'package:twitter/vms/profile_vm.dart';
 import 'package:twitter/vms/tweet_vm.dart';
 
 const String initialRoute = '/';
+const String signUpRoute = 'signup';
 const String profileRoute = 'profile';
 const String hashtagRoute = 'hashtag';
 const String tweetRoute = 'tweet';
@@ -24,6 +26,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
   switch (settings.name) {
     case initialRoute:
       return MaterialPageRoute(builder: (_) => LoginScreen());
+      break;
+
+    case signUpRoute:
+      return MaterialPageRoute(builder: (_) => SignUpScreen());
       break;
 
     case profileRoute:

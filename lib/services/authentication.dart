@@ -14,16 +14,13 @@ abstract class AuthenticationService extends ChangeNotifier {
 
   /// Signs a User into a new session
   Future<AuthResponse> signIn(
-    String email,
+    String name,
     String password,
   );
 
   /// Signs up a new User for the application
-  Future<AuthResponse> signUp(
-    String email,
-    String alias,
-    String password,
-  );
+  Future<AuthResponse> signUp(String name, String alias, String password,
+      {String profilePicPath});
 
   /// Ends a Users session
   void signOut();
