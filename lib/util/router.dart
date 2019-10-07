@@ -39,8 +39,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       ProfileRouteArguments _args = settings.arguments;
       return MaterialPageRoute(
         builder: (context) {
+          var _api = Provider.of<Api>(context);
           return ChangeNotifierProvider<ProfileVM>(
-            builder: (_) => ProfileVM(_args.user),
+            builder: (_) => ProfileVM(_args.user, _api),
             child: ProfileScreen(),
           );
         },

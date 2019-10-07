@@ -7,6 +7,7 @@ import 'api.dart';
 
 abstract class AuthenticationService extends ChangeNotifier {
   User currUser;
+  // String currToken;
 
   /// Gets the currently logged in User
   User getCurrentUser();
@@ -16,9 +17,11 @@ abstract class AuthenticationService extends ChangeNotifier {
   // TODO get rid of this
   void updateCurrUser();
 
+  // Future createSession();
+
   /// Signs a User into a new session
   Future<AuthResponse> signIn(
-    String name,
+    String alias,
     String password,
   );
 

@@ -39,6 +39,8 @@ class AWSAuthenticationService extends AuthenticationService {
       return AuthResponse(
           -1, 'No user exists with that alias. Try creating an account.');
     }
+
+    // Create session
     this.currUser = user;
 
     notifyListeners();
@@ -49,7 +51,7 @@ class AWSAuthenticationService extends AuthenticationService {
   @override
   Future<AuthResponse> signUp(String name, String alias, String password,
       {String profilePicPath}) async {
-    AuthResponse _aliasResp = isUniqueAlias(alias);
+    AuthResponse _aliasResp = await isUniqueAlias(alias);
     AuthResponse _passResp = isValidPassword(password);
 
     if (_aliasResp.status == -1) {
@@ -64,20 +66,21 @@ class AWSAuthenticationService extends AuthenticationService {
     if (profilePicPath != null) {
       newuser.changeProfilePic(profilePicPath);
     }
+
     bool resp = await _api.createUser(newuser);
 
+    // Create session
     this.currUser = newuser;
+
     notifyListeners();
     return AuthResponse(0, 'Welcome ${newuser.alias}!');
   }
 
-  AuthResponse isUniqueAlias(String alias) {
-    for (var user in allUsers) {
-      if (user.alias == alias) {
-        return AuthResponse(-1, 'That alias is already taken');
-      }
-    }
-    return AuthResponse(0, 'Valid alias');
+  Future<AuthResponse> isUniqueAlias(String alias) async {
+    bool isUnique = await _api.isUniqueAlias(alias);
+    return isUnique
+        ? AuthResponse(0, 'Valid alias')
+        : AuthResponse(-1, 'That alias is already taken');
   }
 
   @override
