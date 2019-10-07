@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:twitter/models/user.dart';
@@ -9,27 +11,52 @@ class UserListItem extends StatefulWidget {
 }
 
 class _UserListItemState extends State<UserListItem> {
+  FollowingVM _followingVM;
+
+  Widget _unfollowButton() {
+    return RaisedButton(
+      onPressed: () {
+        _followingVM.toggleFollowStatus(false);
+      },
+      child: Text('Unfollow'),
+    );
+  }
+
+  Widget _followButton() {
+    return RaisedButton(
+      onPressed: () {
+        _followingVM.toggleFollowStatus(true);
+      },
+      child: Text('Follow'),
+    );
+  }
+
+  Widget _buildButton() {
+    if (_followingVM.isCurrUserFollowing()) {
+      return _unfollowButton();
+    } else {
+      return _followButton();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<FollowingVM>(
       builder: (context, vm, _) {
+        this._followingVM = vm;
         return ListTile(
           leading: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+            padding: EdgeInsets.symmetric(horizontal: 8.0),
             child: CircleAvatar(
-              child: vm.otherUser.profilePic.route == User.defaultProfileURL
-                  ? Image.asset(vm.otherUser.profilePic.route)
-                  : Image.network(vm.otherUser.profilePic.route),
+              backgroundImage:
+                  vm.otherUser.profilePic.route == User.defaultProfileURL
+                      ? AssetImage(vm.otherUser.profilePic.route)
+                      : FileImage(File(vm.otherUser.profilePic.route)),
             ),
           ),
           title: Text('${vm.otherUser.fullName}'),
           subtitle: Text('@${vm.otherUser.alias}'),
-
-          // TODO figure out following button functionality
-          trailing: MaterialButton(
-            onPressed: () {},
-            child: Text('Follow'),
-          ),
+          trailing: _buildButton(),
         );
       },
     );

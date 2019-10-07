@@ -1,16 +1,31 @@
 import 'package:flutter/widgets.dart';
 import 'package:twitter/models/following.dart';
 import 'package:twitter/models/user.dart';
+import 'package:twitter/services/api.dart';
 import 'package:twitter/vms/base_vm.dart';
 
 class FollowingVM extends BaseVM with ChangeNotifier {
-  User _loggedInUser;
+  Api api;
+  User loggedInUser;
   User otherUser;
   Following theFollowing;
 
-  FollowingVM(this._loggedInUser, this.otherUser, {this.theFollowing});
+  FollowingVM(this.loggedInUser, this.otherUser, this.api, {this.theFollowing});
 
-  // bool getFollowStatus();
+  void toggleFollowStatus(bool follow) {
+    if (follow) {
+      api.follow(loggedInUser.id, otherUser.id);
+    } else {
+      api.unfollow(loggedInUser.id, otherUser.id);
+    }
+  }
 
-  void toggleFollowStatus() {}
+  bool isCurrUserFollowing() {
+    for (var f in this.loggedInUser.following) {
+      if (f.followeeId == this.otherUser.id) {
+        return true;
+      }
+    }
+    return false;
+  }
 }

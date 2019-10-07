@@ -89,8 +89,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
             builder: (context, snapshot) {
               switch (snapshot.connectionState) {
                 case ConnectionState.done:
-                  var _vm = TweetListVM(snapshot.data,
-                      _auth.getCurrentUser().id, _api, TweetListType.hashtag,
+                  var _vm = TweetListVM(
+                      snapshot.data, _auth, _api, TweetListType.hashtag,
                       hashtag: _args.hashtag.word);
                   return ChangeNotifierProvider<TweetListVM>.value(
                     value: _vm,

@@ -11,21 +11,29 @@ import 'package:twitter/util/router.dart';
 import 'package:twitter/vms/auth_vm.dart';
 
 void main() {
+  // Change AuthService and Api implementations here
+  final AuthenticationService _authService = AWSAuthenticationService();
+  final Api _twitterApi = AWSTwitterApi(_authService);
+  _authService..api = _twitterApi;
   db.initDummyData();
-  runApp(TwitterClone());
+  runApp(TwitterClone(_twitterApi, _authService));
 }
 
 class TwitterClone extends StatelessWidget {
-  // This widget is the root of your application.
+  final AuthenticationService _authService;
+  final Api _twitterApi;
+
+  TwitterClone(this._twitterApi, this._authService);
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider<Api>(
-          builder: (_) => AWSTwitterApi.getInstance(),
+        Provider<Api>.value(
+          value: _twitterApi,
         ),
-        ChangeNotifierProvider<AuthenticationService>(
-          builder: (_) => AWSAuthenticationService(),
+        ChangeNotifierProvider.value(
+          value: _authService,
         ),
       ],
       child: Consumer<AuthenticationService>(

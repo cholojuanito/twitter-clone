@@ -1,8 +1,5 @@
 const int MIN_PASSWORD_LEN = 8;
 const int MAX_PASSWORD_LEN = 16;
-// TODO Use in MEssageParser
-// const String ALIAS_PREFIX = '@';
-// const String HASHTAG_PREFIX = '#';
 
 RegExp _emailRegex = RegExp(
     r"^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$");

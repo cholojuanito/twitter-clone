@@ -3,11 +3,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:twitter/models/user.dart';
 import 'package:twitter/util/auth_util.dart';
 
+import 'api.dart';
+
 abstract class AuthenticationService extends ChangeNotifier {
   User currUser;
 
   /// Gets the currently logged in User
   User getCurrentUser();
+
+  set api(Api api);
 
   // TODO get rid of this
   void updateCurrUser();

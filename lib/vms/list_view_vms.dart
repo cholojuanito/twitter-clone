@@ -5,6 +5,7 @@ import 'package:twitter/models/following.dart';
 import 'package:twitter/models/tweet.dart';
 import 'package:twitter/models/user.dart';
 import 'package:twitter/services/api.dart';
+import 'package:twitter/services/authentication.dart';
 import 'package:twitter/vms/base_vm.dart';
 
 import '../dummy_data.dart';
@@ -25,10 +26,10 @@ abstract class ListViewVM<T> extends BaseVM {
 
 class TweetListVM extends ListViewVM<Tweet> with ChangeNotifier {
   Api api;
-  String currUserId;
+  AuthenticationService authService;
   String hashtag;
   TweetListType type;
-  TweetListVM(List<Tweet> items, this.currUserId, this.api, this.type,
+  TweetListVM(List<Tweet> items, this.authService, this.api, this.type,
       {this.hashtag})
       : super(items);
 
@@ -39,9 +40,11 @@ class TweetListVM extends ListViewVM<Tweet> with ChangeNotifier {
 
     List<Tweet> nextItems = [];
     if (type == TweetListType.feed) {
-      nextItems = await api.getNextFeedTweets(currUserId, currPageNum);
+      nextItems = await api.getNextFeedTweets(
+          authService.getCurrentUser().id, currPageNum);
     } else if (type == TweetListType.story) {
-      nextItems = await api.getNextStoryTweets(currUserId, currPageNum);
+      nextItems = await api.getNextStoryTweets(
+          authService.getCurrentUser().id, currPageNum);
     } else {
       nextItems = await api.getTweetsByHashtag(hashtag);
     }
@@ -72,29 +75,31 @@ class TweetListVM extends ListViewVM<Tweet> with ChangeNotifier {
 }
 
 class FollowingListVM extends ListViewVM<Following> with ChangeNotifier {
+  Api api;
+  AuthenticationService authService;
   List<User> users;
-  bool _getFollowers; // Followers or Following list
-  FollowingListVM(List<Following> items, this._getFollowers) : super(items) {
-    this.users = _getUsersFromList();
-  }
+  FollowListType _type; // Followers or Following list
+  FollowingListVM(List<Following> items, this.authService, this.api, this._type)
+      : super(items);
 
-  List<User> _getUsersFromList() {
-    List<User> _u = [];
-    if (_getFollowers) {
+  Future initUsers() async {
+    this.users = [];
+    if (_type == FollowListType.followers) {
       for (Following f in this.items) {
-        _u.add(allUsers.firstWhere((u) => u.id == f.followerId));
+        var u = await api.getUserById(f.followerId);
+        this.users.add(u);
       }
     } else {
       for (Following f in this.items) {
-        _u.add(allUsers.firstWhere((u) => u.id == f.followeeId));
+        this.users.add(await api.getUserById(f.followeeId));
       }
     }
 
-    return _u;
+    return;
   }
 
   @override
-  Future<void> getMoreItems() async {
+  Future getMoreItems() async {
     setLoadingState(true);
     notifyListeners();
 
@@ -109,7 +114,7 @@ class FollowingListVM extends ListViewVM<Following> with ChangeNotifier {
   }
 
   @override
-  Future<void> refresh() async {
+  Future refresh() async {
     setLoadingState(true);
     notifyListeners();
 
@@ -122,12 +127,7 @@ class FollowingListVM extends ListViewVM<Following> with ChangeNotifier {
 
     return null;
   }
-
-  @override
-  Future onListItemCreate(int idx) {
-    // TODO: implement onListItemCreate
-    return null;
-  }
 }
 
 enum TweetListType { feed, story, hashtag }
+enum FollowListType { followers, following }

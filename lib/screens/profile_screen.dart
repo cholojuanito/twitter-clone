@@ -6,10 +6,10 @@ import 'package:outline_material_icons/outline_material_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:twitter/models/user.dart';
 import 'package:twitter/services/api.dart';
+import 'package:twitter/services/authentication.dart';
 import 'package:twitter/theme/color.dart';
 import 'package:twitter/theme/icons.dart';
 import 'package:twitter/util/router.dart';
-import 'package:twitter/vms/auth_vm.dart';
 import 'package:twitter/vms/follow_vm.dart';
 import 'package:twitter/vms/tweet_vm.dart';
 import 'package:twitter/vms/list_view_vms.dart';
@@ -28,7 +28,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   final int _NUM_TABS = 4;
   Api _api;
   ProfileVM _vm;
-  AuthVM _authVM;
+  AuthenticationService _auth;
   // These are for referencing from the scroll listeners
   ListViewVM _feedVM;
   ListViewVM _storyVM;
@@ -118,27 +118,47 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildFollowingList(User loggedInUser, bool isFollowersList) {
+  Widget _buildFollowingList(bool isFollowersList) {
     return Consumer<FollowingListVM>(
       builder: (context, vm, _) {
-        var items = vm.items;
-        return ListView.builder(
-          itemCount: vm.users.length + 1,
-          itemBuilder: (context, idx) {
-            if (items.isEmpty) {
-              return _buildEmptyListText();
-            } else if (idx == items.length) {
-              return _buildProgressIndicator(
-                  isFollowersList ? _followersVM : _followingVM);
-            } else {
-              var u = vm.users.elementAt(idx);
-              var f = isFollowersList
-                  ? items.firstWhere((f) => u.id == f.followerId, orElse: null)
-                  : items.firstWhere((f) => u.id == f.followerId, orElse: null);
-              return ChangeNotifierProvider<FollowingVM>(
-                builder: (_) => FollowingVM(loggedInUser, u, theFollowing: f),
-                child: UserListItem(),
-              );
+        return FutureBuilder(
+          future: vm.initUsers(),
+          builder: (context, snapshot) {
+            switch (snapshot.connectionState) {
+              case ConnectionState.done:
+                var items = vm.items;
+                return ListView.builder(
+                  itemCount: vm.users.length + 1,
+                  itemBuilder: (context, idx) {
+                    if (items.isEmpty) {
+                      return _buildEmptyListText();
+                    } else if (idx == items.length) {
+                      return _buildProgressIndicator(
+                          isFollowersList ? _followersVM : _followingVM);
+                    } else {
+                      var u = vm.users.elementAt(idx);
+                      var f = isFollowersList
+                          ? items.firstWhere((f) => u.id == f.followerId,
+                              orElse: null)
+                          : items.firstWhere((f) => u.id == f.followeeId,
+                              orElse: null);
+                      return ChangeNotifierProvider<FollowingVM>(
+                        builder: (_) => FollowingVM(
+                          _auth.getCurrentUser(),
+                          u,
+                          _api,
+                          theFollowing: f,
+                        ),
+                        child: UserListItem(),
+                      );
+                    }
+                  },
+                );
+                break;
+              default:
+                return Center(
+                  child: CircularProgressIndicator(),
+                );
             }
           },
         );
@@ -177,18 +197,20 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   Widget build(BuildContext context) {
     _vm = Provider.of<ProfileVM>(context);
-    _authVM = Provider.of<AuthVM>(context);
+    _auth = Provider.of<AuthenticationService>(context);
     _api = Provider.of<Api>(context);
     // For checking if the user profile to display is that of the
     // currently logged in user
-    bool _isLoggedInUser = _vm.user.alias == _authVM.getCurrentUser()?.alias;
+    bool _isLoggedInUser = _vm.user.alias == _auth.getCurrentUser()?.alias;
 
-    _feedVM = TweetListVM(_vm.user.feed.tweets, _authVM.getCurrentUser()?.id,
-        _api, TweetListType.feed);
-    _storyVM = TweetListVM(_vm.user.story.tweets, _authVM.getCurrentUser()?.id,
-        _api, TweetListType.story);
-    _followersVM = FollowingListVM(_vm.user.followers, true);
-    _followingVM = FollowingListVM(_vm.user.following, true);
+    _feedVM =
+        TweetListVM(_vm.user.feed.tweets, _auth, _api, TweetListType.feed);
+    _storyVM =
+        TweetListVM(_vm.user.story.tweets, _auth, _api, TweetListType.story);
+    _followersVM = FollowingListVM(
+        _vm.user.followers, _auth, _api, FollowListType.followers);
+    _followingVM = FollowingListVM(
+        _vm.user.following, _auth, _api, FollowListType.following);
 
     return Scaffold(
       appBar: AppBar(
@@ -196,11 +218,12 @@ class _ProfileScreenState extends State<ProfileScreen>
             ? Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
                 child: CircleAvatar(
-                  backgroundImage: _vm.user.profilePic.route ==
-                          User.defaultProfileURL
-                      ? AssetImage(_vm.user.profilePic.route)
-                      : FileImage(File(
-                          _vm.user.profilePic.route)), //TODO change to network
+                  backgroundImage:
+                      _vm.user.profilePic.route == User.defaultProfileURL
+                          ? AssetImage(_vm.user.profilePic.route)
+                          : FileImage(
+                              File(_vm.user.profilePic.route),
+                            ), //TODO change to network
                 ),
               )
             : IconButton(
@@ -225,7 +248,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 IconButton(
                   icon: Icon(OMIcons.exitToApp),
                   onPressed: () {
-                    _authVM.signOut();
+                    _auth.signOut();
                     appNavKey.currentState.popAndPushNamed(initialRoute);
                   },
                 ),
@@ -246,11 +269,11 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
           ChangeNotifierProvider<FollowingListVM>.value(
             value: _followersVM,
-            child: _buildFollowingList(_authVM.getCurrentUser(), true),
+            child: _buildFollowingList(true),
           ),
           ChangeNotifierProvider<FollowingListVM>.value(
             value: _followingVM,
-            child: _buildFollowingList(_authVM.getCurrentUser(), false),
+            child: _buildFollowingList(false),
           ),
         ],
       ),
@@ -265,7 +288,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 appNavKey.currentState.pushNamed(
                   createTweetRoute,
                   arguments: CreateTweetRouteArguments(
-                    _authVM.getCurrentUser(),
+                    _auth.getCurrentUser(),
                   ),
                 );
               },

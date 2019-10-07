@@ -7,15 +7,20 @@ import 'package:twitter/models/tweet.dart';
 import 'package:twitter/models/tweet_collections.dart';
 import 'package:twitter/models/user.dart';
 import 'package:twitter/services/api.dart';
+import 'package:twitter/services/authentication.dart';
 import 'package:twitter/util/router.dart';
+import 'package:uuid/uuid.dart';
 
 class AWSTwitterApi extends Api {
-  static final AWSTwitterApi _awsApi = AWSTwitterApi._internal();
-  AWSTwitterApi._internal();
+  AuthenticationService _authService;
+  // static final AWSTwitterApi _awsApi = AWSTwitterApi._internal();
+  // AWSTwitterApi._internal();
 
-  factory AWSTwitterApi.getInstance() {
-    return _awsApi;
-  }
+  // factory AWSTwitterApi.getInstance() {
+  //   return _awsApi;
+  // }
+
+  AWSTwitterApi(this._authService);
 
   @override
   Future<bool> createUser(User user) async {
@@ -159,14 +164,22 @@ class AWSTwitterApi extends Api {
 
   @override
   Future<bool> follow(String currUserId, String otherUserId) async {
-    // TODO: implement follow
-    return null;
+    Following newFollow = Following(Uuid().v4(), currUserId, otherUserId);
+    allFollows.add(newFollow);
+    userFollowersMap[otherUserId].add(newFollow);
+    userFollowingMap[currUserId].add(newFollow);
+    return true;
   }
 
   @override
   Future<bool> unfollow(String currUserId, String otherUserId) async {
-    // TODO: implement unfollow
-    return null;
+    allFollows.removeWhere(
+        (f) => f.followerId == currUserId && f.followeeId == otherUserId);
+    userFollowersMap[otherUserId].removeWhere(
+        (f) => f.followerId == currUserId && f.followeeId == otherUserId);
+    userFollowingMap[currUserId].removeWhere(
+        (f) => f.followerId == currUserId && f.followeeId == otherUserId);
+    return true;
   }
 
   @override

@@ -10,6 +10,8 @@ import 'package:twitter/models/tweet.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TweetVM extends BaseVM with ChangeNotifier {
+  static const String ALIAS_PREFIX = '@';
+  static const String HASHTAG_PREFIX = '#';
   Api _api;
   Tweet tweet;
   User author;
@@ -146,7 +148,7 @@ class TweetVM extends BaseVM with ChangeNotifier {
   }
 
   bool _isHashtag(String word) {
-    if (word.startsWith('#')) {
+    if (word.startsWith(HASHTAG_PREFIX)) {
       for (var h in this.tweet.hashtags) {
         if (h.word == word.substring(1)) {
           return true;
@@ -157,7 +159,7 @@ class TweetVM extends BaseVM with ChangeNotifier {
   }
 
   bool _isMention(String word) {
-    if (word.startsWith('@')) {
+    if (word.startsWith(ALIAS_PREFIX)) {
       for (var m in this.tweet.mentions) {
         if (m.userId == word.substring(1)) {
           return true;

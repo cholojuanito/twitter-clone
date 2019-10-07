@@ -1,17 +1,24 @@
 import 'package:twitter/dummy_data.dart';
 import 'package:twitter/models/user.dart';
 import 'package:twitter/services/authentication.dart';
-import 'package:twitter/services/aws_api.dart';
 import 'package:twitter/util/auth_util.dart';
 import 'package:uuid/uuid.dart';
 
+import 'api.dart';
+
 class AWSAuthenticationService extends AuthenticationService {
+  Api _api;
   AWSAuthenticationService();
 
-  // TODO get rid of this, it is solely for the dummy data
+  @override
+  set api(Api api) => _api = api;
+
+  // TODO get rid of this, it is solely for propogating data changes
   void updateCurrUser() {
-    // updateUser(this.currUser.id);
-    notifyListeners();
+    _api.getUserById(this.currUser.id).then((newUser) {
+      this.currUser = newUser;
+      notifyListeners();
+    });
   }
 
   @override
@@ -27,7 +34,7 @@ class AWSAuthenticationService extends AuthenticationService {
     //   return _passResp;
     // }
 
-    var user = await AWSTwitterApi.getInstance().getUserByAlias(alias);
+    var user = await _api.getUserByAlias(alias);
     if (user == null) {
       return AuthResponse(
           -1, 'No user exists with that alias. Try creating an account.');
@@ -57,7 +64,7 @@ class AWSAuthenticationService extends AuthenticationService {
     if (profilePicPath != null) {
       newuser.changeProfilePic(profilePicPath);
     }
-    bool resp = await AWSTwitterApi.getInstance().createUser(newuser);
+    bool resp = await _api.createUser(newuser);
 
     this.currUser = newuser;
     notifyListeners();
