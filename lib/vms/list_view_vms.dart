@@ -1,12 +1,12 @@
 import 'dart:collection';
 
 import 'package:flutter/widgets.dart';
-import 'package:twitter/models/following.dart';
-import 'package:twitter/models/tweet.dart';
-import 'package:twitter/models/user.dart';
-import 'package:twitter/services/api.dart';
-import 'package:twitter/services/authentication.dart';
-import 'package:twitter/vms/base_vm.dart';
+import 'package:twitter_clone/models/following.dart';
+import 'package:twitter_clone/models/tweet.dart';
+import 'package:twitter_clone/models/user.dart';
+import 'package:twitter_clone/services/api.dart';
+import 'package:twitter_clone/services/authentication.dart';
+import 'package:twitter_clone/vms/base_vm.dart';
 
 import '../dummy_data.dart';
 
@@ -40,11 +40,9 @@ class TweetListVM extends ListViewVM<Tweet> with ChangeNotifier {
 
     List<Tweet> nextItems = [];
     if (type == TweetListType.feed) {
-      nextItems = await api.getNextFeedTweets(
-          authService.getCurrentUser().id, currPageNum);
+      nextItems = await api.getFeed(authService.getCurrentUser().id);
     } else if (type == TweetListType.story) {
-      nextItems = await api.getNextStoryTweets(
-          authService.getCurrentUser().id, currPageNum);
+      nextItems = await api.getStory(authService.getCurrentUser().id);
     } else {
       nextItems = await api.getTweetsByHashtag(hashtag);
     }

@@ -1,18 +1,29 @@
 import 'dart:io';
 
-import 'package:twitter/dummy_data.dart';
-import 'package:twitter/models/following.dart';
-import 'package:twitter/models/linked_items.dart';
-import 'package:twitter/models/tweet.dart';
-import 'package:twitter/models/tweet_collections.dart';
-import 'package:twitter/models/user.dart';
-import 'package:twitter/services/api.dart';
-import 'package:twitter/services/authentication.dart';
-import 'package:twitter/util/router.dart';
+import 'package:twitter_clone/dummy_data.dart';
+import 'package:twitter_clone/models/following.dart';
+import 'package:twitter_clone/models/linked_items.dart';
+import 'package:twitter_clone/models/tweet.dart';
+import 'package:twitter_clone/models/tweet_collections.dart';
+import 'package:twitter_clone/models/user.dart';
+import 'package:twitter_clone/services/api.dart';
+import 'package:twitter_clone/services/authentication.dart';
+import 'package:twitter_clone/util/router.dart';
 import 'package:uuid/uuid.dart';
 
 class AWSTwitterApi extends Api {
   AuthenticationService _authService;
+  final String baseUrl =
+      'https://ei0piiispg.execute-api.us-west-1.amazonaws.com/mock-stage';
+  final String region = 'us-west-1';
+  final String userEndpoint = '/user';
+  final String followEndpoint = '/follow';
+  final String tweetEndpoint = '/tweet';
+  final String hashtagEndpoint = '/hashtag';
+  final String followersEndpoint = '/followers';
+  final String followingEndpoint = '/following';
+  final String tweetsEndpoint = '/tweets';
+
   // static final AWSTwitterApi _awsApi = AWSTwitterApi._internal();
   // AWSTwitterApi._internal();
 
@@ -23,22 +34,18 @@ class AWSTwitterApi extends Api {
   AWSTwitterApi(this._authService);
 
   @override
-  Future<bool> createUser(User user) async {
+  Future<User> createUser(User user) async {
     allUsers.add(user);
     userStories[user.id] = [];
     userFollowersMap[user.id] = [];
     userFollowingMap[user.id] = [];
-    return true;
+    return user;
   }
 
   @override
   Future<bool> isUniqueAlias(String alias) async {
-    for (var user in allUsers) {
-      if (user.alias == alias) {
-        return false;
-      }
-    }
-    return true;
+    var u = await getUserByAlias(alias);
+    return u == null ? true : false;
   }
 
   @override
@@ -65,17 +72,17 @@ class AWSTwitterApi extends Api {
   }
 
   @override
-  Future<User> updateUser(User newUser) async {
+  Future<bool> updateUserProfilePic(User newUser, String newPath) async {
     User user =
         allUsers.firstWhere((u) => u.id == newUser.id, orElse: () => null);
-    user.feed = Feed(_buildUsersFeed(user));
-    user.story = Story(_buildUsersStory(user));
 
-    return user;
+    user.profilePic.route = newPath;
+
+    return true;
   }
 
   @override
-  Future<bool> createTweet(Tweet tweet) async {
+  Future<Tweet> createTweet(Tweet tweet) async {
     if (tweet.hashtags.length > 0) {
       for (var hashtag in tweet.hashtags) {
         var h = await getHashtag(hashtag.word);
@@ -102,10 +109,8 @@ class AWSTwitterApi extends Api {
     allTweets.add(tweet);
     userStories[tweet.authorId].add(tweet);
     // Upload media
-    return true;
+    return tweet;
   }
-
-  Future _uploadMedia(File media) {}
 
   @override
   Future<Tweet> getTweetById(String tweetId) async {
@@ -113,40 +118,12 @@ class AWSTwitterApi extends Api {
   }
 
   @override
-  Future<bool> createHashtag(String word, String firstTweetId) async {
+  Future<Hashtag> createHashtag(String word, String firstTweetId) async {
     // TODO maybe throw in checking for duplicates here?
     Hashtag h = Hashtag(hashtagRoute, word, tweetIds: [firstTweetId]);
     allHashtags.add(h);
     hashtagTweets[h.word] = h.tweetIds;
-    return true;
-  }
-
-  @override
-  Future<List<Tweet>> getTweetsByHashtag(String word) async {
-    List<Tweet> _tweets = [];
-    try {
-      Hashtag h = await getHashtag(word);
-      for (var id in h.tweetIds) {
-        _tweets.add(await getTweetById(id));
-      }
-    } on StateError catch (e) {
-      _tweets = null;
-    }
-    return _tweets;
-  }
-
-  @override
-  Future<List<Tweet>> getNextTweetsByHashtag(String word, int pageNum) async {
-    Hashtag h = await getHashtag(word);
-    List<String> ids = List.from(h.tweetIds.sublist(0, 3));
-    List<Tweet> moreItems = [];
-
-    for (var id in ids.sublist(0, 3)) {
-      moreItems
-          .add(allTweets.firstWhere((t) => t.id == id, orElse: () => null));
-    }
-
-    return moreItems;
+    return h;
   }
 
   @override
@@ -158,13 +135,18 @@ class AWSTwitterApi extends Api {
   }
 
   @override
+  Future<bool> removeTweetFromHashtag(String wrod, String tweetId) async {
+    return true;
+  }
+
+  @override
   Future<Hashtag> getHashtag(String word) async {
     return allHashtags.firstWhere((h) => h.word == word, orElse: () => null);
   }
 
   @override
   Future<bool> follow(String currUserId, String otherUserId) async {
-    Following newFollow = Following(Uuid().v4(), currUserId, otherUserId);
+    Following newFollow = Following(currUserId, otherUserId, id: Uuid().v4());
     allFollows.add(newFollow);
     userFollowersMap[otherUserId].add(newFollow);
     userFollowingMap[currUserId].add(newFollow);
@@ -183,7 +165,8 @@ class AWSTwitterApi extends Api {
   }
 
   @override
-  Future<List<Tweet>> getNextFeedTweets(String userId, int pageNum) async {
+  Future<List<Tweet>> getFeed(String userId,
+      {String lastKey, int pageSize = 10}) async {
     User u = await getUserById(userId);
     List<Tweet> moreItems = List.from(u.feed.tweets.sublist(0, 5));
     // u.feed.tweets.addAll(moreItems);
@@ -191,7 +174,8 @@ class AWSTwitterApi extends Api {
   }
 
   @override
-  Future<List<Tweet>> getNextStoryTweets(String userId, int pageNum) async {
+  Future<List<Tweet>> getStory(String userId,
+      {String lastKey, int pageSize = 10}) async {
     User u = await getUserById(userId);
     List<Tweet> moreItems = List.from(u.story.tweets.sublist(0, 5));
     // u.story.tweets.addAll(moreItems);
@@ -199,16 +183,35 @@ class AWSTwitterApi extends Api {
   }
 
   @override
-  Future<List<User>> getNextFollowers(String userId, int pageNum) async {
+  Future<List<Tweet>> getTweetsByHashtag(String word,
+      {String lastKey, int pageSize = 10}) async {
+    Hashtag h = await getHashtag(word);
+    List<String> ids = List.from(h.tweetIds.sublist(0, 3));
+    List<Tweet> moreItems = [];
+
+    for (var id in ids.sublist(0, 3)) {
+      moreItems
+          .add(allTweets.firstWhere((t) => t.id == id, orElse: () => null));
+    }
+
+    return moreItems;
+  }
+
+  @override
+  Future<List<User>> getFollowers(String userId,
+      {String lastKey, int pageSize = 10}) async {
     // TODO: implement getNextFollowers
     return null;
   }
 
   @override
-  Future<List<User>> getNextFollowing(String userId, int pageNum) async {
+  Future<List<User>> getFollowing(String userId,
+      {String lastKey, int pageSize = 10}) async {
     // TODO: implement getNextFollowing
     return null;
   }
+
+  Future<String> _uploadMedia(File media) async {}
 
   List<Tweet> _buildUsersStory(User u) {
     // var t = allTweets.where((t) => t.authorId == u.id).toList();

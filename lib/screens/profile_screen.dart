@@ -4,18 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:md2_tab_indicator/md2_tab_indicator.dart';
 import 'package:outline_material_icons/outline_material_icons.dart';
 import 'package:provider/provider.dart';
-import 'package:twitter/models/user.dart';
-import 'package:twitter/services/api.dart';
-import 'package:twitter/services/authentication.dart';
-import 'package:twitter/theme/color.dart';
-import 'package:twitter/theme/icons.dart';
-import 'package:twitter/util/router.dart';
-import 'package:twitter/vms/follow_vm.dart';
-import 'package:twitter/vms/tweet_vm.dart';
-import 'package:twitter/vms/list_view_vms.dart';
-import 'package:twitter/vms/profile_vm.dart';
-import 'package:twitter/widgets/tweet_list_item.dart';
-import 'package:twitter/widgets/user_list_item.dart';
+import 'package:twitter_clone/models/user.dart';
+import 'package:twitter_clone/services/api.dart';
+import 'package:twitter_clone/services/authentication.dart';
+import 'package:twitter_clone/theme/color.dart';
+import 'package:twitter_clone/theme/icons.dart';
+import 'package:twitter_clone/util/router.dart';
+import 'package:twitter_clone/vms/follow_vm.dart';
+import 'package:twitter_clone/vms/tweet_vm.dart';
+import 'package:twitter_clone/vms/list_view_vms.dart';
+import 'package:twitter_clone/vms/profile_vm.dart';
+import 'package:twitter_clone/widgets/tweet_list_item.dart';
+import 'package:twitter_clone/widgets/user_list_item.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override

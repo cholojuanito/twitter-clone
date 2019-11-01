@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:outline_material_icons/outline_material_icons.dart';
 import 'package:provider/provider.dart';
-import 'package:twitter/models/user.dart';
-import 'package:twitter/theme/color.dart';
-import 'package:twitter/theme/icons.dart';
-import 'package:twitter/util/router.dart';
+import 'package:twitter_clone/models/user.dart';
+import 'package:twitter_clone/theme/color.dart';
+import 'package:twitter_clone/theme/icons.dart';
+import 'package:twitter_clone/util/router.dart';
 
-import 'package:twitter/vms/auth_vm.dart';
+import 'package:twitter_clone/vms/auth_vm.dart';
 
 class SignUpScreen extends StatefulWidget {
   @override

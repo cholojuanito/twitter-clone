@@ -5,8 +5,10 @@ class Following {
   String followerId;
   String followeeId;
   DateTime startDate;
+  bool isActive;
 
-  Following(this.id, this.followerId, this.followeeId, {this.startDate}) {
+  Following(this.followerId, this.followeeId,
+      {this.id, this.isActive = true, this.startDate}) {
     if (this.startDate == null) {
       this.startDate = DateTime.now();
     }

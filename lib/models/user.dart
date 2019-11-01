@@ -1,9 +1,9 @@
 import 'dart:core';
 
 import 'package:flutter/widgets.dart';
-import 'package:twitter/models/linked_items.dart';
-import 'package:twitter/models/tweet_collections.dart';
-import 'package:twitter/models/following.dart';
+import 'package:twitter_clone/models/linked_items.dart';
+import 'package:twitter_clone/models/tweet_collections.dart';
+import 'package:twitter_clone/models/following.dart';
 import 'package:uuid/uuid.dart';
 
 class User with ChangeNotifier {
@@ -33,9 +33,9 @@ class User with ChangeNotifier {
 
   // TODO add a total num tweets member
   User(
-    this.id,
     this.alias,
     this._fullName, {
+    this.id,
     this.profilePic,
     this.followers = const [],
     this.following = const [],
@@ -63,9 +63,9 @@ class User with ChangeNotifier {
     // List<Following> _following = [];
 
     return User(
-      json['id'] as String,
       json['alias'] as String,
       json['fullName'] as String,
+      id: json['id'] as String,
       profilePic: Media(json['photoURL'], MediaType.Image),
       // json['followers'],
       // json['following'],
@@ -78,6 +78,6 @@ class User with ChangeNotifier {
         'alias': alias,
         'fullName': _fullName,
         'photoURL': profilePic.route,
-        'created': created.toIso8601String(),
+        'created': created?.toIso8601String(),
       };
 }

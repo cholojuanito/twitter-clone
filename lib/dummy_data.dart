@@ -1,8 +1,8 @@
-import 'package:twitter/models/linked_items.dart';
-import 'package:twitter/models/user.dart';
-import 'package:twitter/models/tweet.dart';
-import 'package:twitter/models/following.dart';
-import 'package:twitter/util/router.dart';
+import 'package:twitter_clone/models/linked_items.dart';
+import 'package:twitter_clone/models/user.dart';
+import 'package:twitter_clone/models/tweet.dart';
+import 'package:twitter_clone/models/following.dart';
+import 'package:twitter_clone/util/router.dart';
 
 List<User> allUsers;
 List<Tweet> allTweets;
@@ -15,9 +15,9 @@ Map<String, List<String>> hashtagTweets = {};
 
 const String mentionRoute = 'profile';
 
-User u1 = User('id1', 'number1', 'Tanner Davis');
-User u2 = User('id2', 'dos-dos', 'Sr. Dos');
-User u3 = User('id3', 'tres', 'Numba three!');
+User u1 = User('number1', 'Tanner Davis', id: 'id1');
+User u2 = User('dos-dos', 'Sr. Dos', id: 'id2');
+User u3 = User('tres', 'Numba three!', id: 'id3');
 
 // Hashtags
 Hashtag h1 = Hashtag(hashtagRoute, 'hashtag');
@@ -29,124 +29,106 @@ Hashtag h6 = Hashtag(hashtagRoute, 'one');
 Hashtag h7 = Hashtag(hashtagRoute, 'number1');
 
 // Tweets
-Tweet t11 = Tweet('t1', u1.id, 'Some tweet by me!');
-Tweet t12 = Tweet('t2', u1.id,
-    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.');
-Tweet t13 = Tweet('t3', u1.id, 'This is my 3rd tweet');
-Tweet t21 = Tweet('t4', u2.id, 'This is my first tweet');
-Tweet t22 = Tweet('t5', u2.id, 'I am tweeting!');
+Tweet t11 = Tweet(u1.id, 'Some tweet by me!', id: 't1');
+Tweet t12 = Tweet(u1.id,
+    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+    id: 't2');
+Tweet t13 = Tweet(u1.id, 'This is my 3rd tweet', id: 't3');
+Tweet t21 = Tweet(u2.id, 'This is my first tweet', id: 't4');
+Tweet t22 = Tweet(u2.id, 'I am tweeting!', id: 't5');
 
-Tweet t31 = Tweet(
-  't6',
-  u3.id,
-  'Listen to me @dos-dos and @number1',
-  mentions: [
-    Mention(mentionRoute, u1.alias),
-    Mention(mentionRoute, u2.alias),
-  ],
-);
-Tweet t32 = Tweet(
-  't7',
-  u3.id,
-  'Let\s test a hashtag #hashtag #nashtag with some mentions like @dos-dos or @number1 or maybe test some weird stuff like just the @ symbol. This needs to be pretty long because, yea. now for a url www.google.com and https://slack.com or http://www.flutter.dev',
-  mentions: [
-    Mention(mentionRoute, u1.alias),
-    Mention(mentionRoute, u2.alias),
-  ],
-  hashtags: [
-    h1,
-    h2,
-  ],
-);
-Tweet t33 = Tweet(
-  't8',
-  u3.id,
-  'Let\s test a hashtag #hashtag #nashtag with some mentions like @dos-dos or @number1 or maybe test some weird stuff like just the @ symbol. This needs to be pretty long because, yea. now for a url www.google.com and https://slack.com or http://www.flutter.dev',
-  mentions: [
-    Mention(mentionRoute, u1.alias),
-    Mention(mentionRoute, u2.alias),
-  ],
-  hashtags: [
-    h1,
-    h2,
-  ],
-);
-Tweet t34 = Tweet(
-  't9',
-  u3.id,
-  'Let\s test a hashtag #hashtag #something with some mentions like @dos-dos or @number1 or maybe test some weird stuff like just the @ symbol. This needs to be pretty long because, yea. now for a url www.google.com and https://slack.com or http://www.flutter.dev',
-  mentions: [
-    Mention(mentionRoute, u1.alias),
-    Mention(mentionRoute, u2.alias),
-  ],
-  hashtags: [
-    h1,
-    h4,
-  ],
-);
-Tweet t35 = Tweet(
-  't10',
-  u3.id,
-  'Let\s test a hashtag #nashtag #newtag with some mentions like @dos-dos or @number1 or maybe test some weird stuff like just the @ symbol. This needs to be pretty long because, yea. now for a url www.google.com and https://slack.com or http://www.flutter.dev',
-  mentions: [
-    Mention(mentionRoute, u1.alias),
-    Mention(mentionRoute, u2.alias),
-  ],
-  hashtags: [
-    h1,
-    h5,
-  ],
-);
-Tweet t36 = Tweet(
-  't11',
-  u3.id,
-  'Let\s test a hashtag #hashtag #nashtag with some mentions like @dos-dos or @number1 or maybe test some weird stuff like just the @ symbol. This needs to be pretty long because, yea. now for a url www.google.com and https://slack.com or http://www.flutter.dev',
-  mentions: [
-    Mention(mentionRoute, u1.alias),
-    Mention(mentionRoute, u2.alias),
-  ],
-  hashtags: [
-    h1,
-    h2,
-  ],
-);
-Tweet t37 = Tweet(
-  't12',
-  u3.id,
-  'Let\s test a hashtag #federer #nashtag with some mentions like @dos-dos or @number1 or maybe test some weird stuff like just the @ symbol. This needs to be pretty long because, yea. now for a url www.google.com and https://slack.com or http://www.flutter.dev',
-  mentions: [
-    Mention(mentionRoute, u1.alias),
-    Mention(mentionRoute, u2.alias),
-  ],
-  hashtags: [
-    h1,
-    h2,
-  ],
-);
+Tweet t31 = Tweet(u3.id, 'Listen to me @dos-dos and @number1',
+    mentions: [
+      Mention(mentionRoute, u1.alias),
+      Mention(mentionRoute, u2.alias),
+    ],
+    id: 't6');
+Tweet t32 = Tweet(u3.id,
+    'Let\s test a hashtag #hashtag #nashtag with some mentions like @dos-dos or @number1 or maybe test some weird stuff like just the @ symbol. This needs to be pretty long because, yea. now for a url www.google.com and https://slack.com or http://www.flutter.dev',
+    mentions: [
+      Mention(mentionRoute, u1.alias),
+      Mention(mentionRoute, u2.alias),
+    ],
+    hashtags: [
+      h1,
+      h2,
+    ],
+    id: 't7');
+Tweet t33 = Tweet(u3.id,
+    'Let\s test a hashtag #hashtag #nashtag with some mentions like @dos-dos or @number1 or maybe test some weird stuff like just the @ symbol. This needs to be pretty long because, yea. now for a url www.google.com and https://slack.com or http://www.flutter.dev',
+    mentions: [
+      Mention(mentionRoute, u1.alias),
+      Mention(mentionRoute, u2.alias),
+    ],
+    hashtags: [
+      h1,
+      h2,
+    ],
+    id: 't8');
+Tweet t34 = Tweet(u3.id,
+    'Let\s test a hashtag #hashtag #something with some mentions like @dos-dos or @number1 or maybe test some weird stuff like just the @ symbol. This needs to be pretty long because, yea. now for a url www.google.com and https://slack.com or http://www.flutter.dev',
+    mentions: [
+      Mention(mentionRoute, u1.alias),
+      Mention(mentionRoute, u2.alias),
+    ],
+    hashtags: [
+      h1,
+      h4,
+    ],
+    id: 't9');
+Tweet t35 = Tweet(u3.id,
+    'Let\s test a hashtag #nashtag #newtag with some mentions like @dos-dos or @number1 or maybe test some weird stuff like just the @ symbol. This needs to be pretty long because, yea. now for a url www.google.com and https://slack.com or http://www.flutter.dev',
+    mentions: [
+      Mention(mentionRoute, u1.alias),
+      Mention(mentionRoute, u2.alias),
+    ],
+    hashtags: [
+      h1,
+      h5,
+    ],
+    id: 't10');
+Tweet t36 = Tweet(u3.id,
+    'Let\s test a hashtag #hashtag #nashtag with some mentions like @dos-dos or @number1 or maybe test some weird stuff like just the @ symbol. This needs to be pretty long because, yea. now for a url www.google.com and https://slack.com or http://www.flutter.dev',
+    mentions: [
+      Mention(mentionRoute, u1.alias),
+      Mention(mentionRoute, u2.alias),
+    ],
+    hashtags: [
+      h1,
+      h2,
+    ],
+    id: 't11');
+Tweet t37 = Tweet(u3.id,
+    'Let\s test a hashtag #federer #nashtag with some mentions like @dos-dos or @number1 or maybe test some weird stuff like just the @ symbol. This needs to be pretty long because, yea. now for a url www.google.com and https://slack.com or http://www.flutter.dev',
+    mentions: [
+      Mention(mentionRoute, u1.alias),
+      Mention(mentionRoute, u2.alias),
+    ],
+    hashtags: [
+      h1,
+      h2,
+    ],
+    id: 't12');
 // For adding each round of pagination
-Tweet t38 = Tweet(
-  't13',
-  u3.id,
-  'Listen to me @dos-dos and @number1. I\'ve got some new hashtags #one',
-  mentions: [
-    Mention(mentionRoute, u1.alias),
-    Mention(mentionRoute, u2.alias),
-  ],
-  hashtags: [
-    h6,
-  ],
-);
-Tweet t39 = Tweet(
-  't14',
-  u3.id,
-  'Testing mention vs hashtag with same word @number1. #number1',
-  mentions: [
-    Mention(mentionRoute, u1.alias),
-  ],
-  hashtags: [
-    h7,
-  ],
-);
+Tweet t38 = Tweet(u3.id,
+    'Listen to me @dos-dos and @number1. I\'ve got some new hashtags #one',
+    mentions: [
+      Mention(mentionRoute, u1.alias),
+      Mention(mentionRoute, u2.alias),
+    ],
+    hashtags: [
+      h6,
+    ],
+    id: 't13');
+Tweet t39 =
+    Tweet(u3.id, 'Testing mention vs hashtag with same word @number1. #number1',
+        mentions: [
+          Mention(mentionRoute, u1.alias),
+        ],
+        hashtags: [
+          h7,
+        ],
+        id: 't14');
 // Tweet t310 = Tweet(
 //   't15',
 //   u3.id,
@@ -187,10 +169,10 @@ Tweet t39 = Tweet(
 //   ],
 // );
 
-Following u1tou2 = Following('f1', u1.id, u2.id);
-Following u1tou3 = Following('f2', u1.id, u3.id);
-Following u2tou1 = Following('f3', u2.id, u1.id);
-Following u3tou2 = Following('f4', u3.id, u2.id);
+Following u1tou2 = Following(u1.id, u2.id, id: 'f1');
+Following u1tou3 = Following(u1.id, u3.id, id: 'f2');
+Following u2tou1 = Following(u2.id, u1.id, id: 'f3');
+Following u3tou2 = Following(u3.id, u2.id, id: 'f4');
 
 initDummyData() {
   allTweets = [

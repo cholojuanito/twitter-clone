@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:twitter/vms/list_view_vms.dart';
-import 'package:twitter/vms/tweet_vm.dart';
-import 'package:twitter/widgets/tweet_list_item.dart';
+import 'package:twitter_clone/vms/list_view_vms.dart';
+import 'package:twitter_clone/vms/tweet_vm.dart';
+import 'package:twitter_clone/widgets/tweet_list_item.dart';
 
 class HashtagScreen extends StatefulWidget {
   final String word;

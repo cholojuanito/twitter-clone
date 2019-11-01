@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 
-import 'package:twitter/models/user.dart';
-import 'package:twitter/util/auth_util.dart';
+import 'package:twitter_clone/models/user.dart';
+import 'package:twitter_clone/util/auth_util.dart';
 
 import 'api.dart';
 

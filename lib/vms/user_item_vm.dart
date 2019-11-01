@@ -1,6 +1,6 @@
-import 'package:twitter/models/following.dart';
-import 'package:twitter/models/user.dart';
-import 'package:twitter/services/authentication.dart';
+import 'package:twitter_clone/models/following.dart';
+import 'package:twitter_clone/models/user.dart';
+import 'package:twitter_clone/services/authentication.dart';
 
 import 'base_vm.dart';
 

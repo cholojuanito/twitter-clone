@@ -1,7 +1,7 @@
 import 'dart:collection';
 
 import 'package:flutter/widgets.dart';
-import 'package:twitter/models/tweet.dart';
+import 'package:twitter_clone/models/tweet.dart';
 
 /// A PostCollection is a sorted list of posts
 /// The list is sorted by when the post was created.

@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
-import 'package:twitter/screens/login_screen.dart';
-import 'package:twitter/dummy_data.dart' as db;
-import 'package:twitter/services/api.dart';
-import 'package:twitter/services/authentication.dart';
-import 'package:twitter/services/aws_api.dart';
-import 'package:twitter/services/aws_auth.dart';
-import 'package:twitter/util/router.dart';
-import 'package:twitter/vms/auth_vm.dart';
+import 'package:twitter_clone/screens/login_screen.dart';
+import 'package:twitter_clone/dummy_data.dart' as db;
+import 'package:twitter_clone/services/api.dart';
+import 'package:twitter_clone/services/authentication.dart';
+import 'package:twitter_clone/services/aws_api.dart';
+import 'package:twitter_clone/services/firebase_auth.dart';
+import 'package:twitter_clone/util/router.dart';
+import 'package:twitter_clone/vms/auth_vm.dart';
 
 void main() {
   // Change AuthService and Api implementations here
-  final AuthenticationService _authService = AWSAuthenticationService();
+  final AuthenticationService _authService = FirebaseAuthenticationService();
   final Api _twitterApi = AWSTwitterApi(_authService);
   _authService..api = _twitterApi;
   db.initDummyData();

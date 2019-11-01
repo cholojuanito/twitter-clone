@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:outline_material_icons/outline_material_icons.dart';
 import 'package:provider/provider.dart';
-import 'package:twitter/models/linked_items.dart';
-import 'package:twitter/theme/color.dart';
-import 'package:twitter/theme/icons.dart';
-import 'package:twitter/util/router.dart';
-import 'package:twitter/vms/create_tweet_vm.dart';
+import 'package:twitter_clone/models/linked_items.dart';
+import 'package:twitter_clone/theme/color.dart';
+import 'package:twitter_clone/theme/icons.dart';
+import 'package:twitter_clone/util/router.dart';
+import 'package:twitter_clone/vms/create_tweet_vm.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:thumbnails/thumbnails.dart';
 

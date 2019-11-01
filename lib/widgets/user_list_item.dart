@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:twitter/models/user.dart';
-import 'package:twitter/vms/follow_vm.dart';
+import 'package:twitter_clone/models/user.dart';
+import 'package:twitter_clone/vms/follow_vm.dart';
 
 class UserListItem extends StatefulWidget {
   @override

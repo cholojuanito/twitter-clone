@@ -7,6 +7,7 @@
 build/
 
 # Editor specific files and directories
+*.idea/
 *.vscode/
 **/*.code-workspace
 
@@ -55,6 +56,7 @@ unlinked.ds
 unlinked_spec.ds
 
 # Android related
+**/android/app/google-services.json
 **/android/**/gradle-wrapper.jar
 **/android/.gradle/
 **/android/captures/

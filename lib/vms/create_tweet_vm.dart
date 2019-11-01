@@ -1,8 +1,8 @@
-import 'package:twitter/models/linked_items.dart';
-import 'package:twitter/models/tweet.dart';
-import 'package:twitter/services/api.dart';
-import 'package:twitter/util/router.dart';
-import 'package:twitter/vms/base_vm.dart';
+import 'package:twitter_clone/models/linked_items.dart';
+import 'package:twitter_clone/models/tweet.dart';
+import 'package:twitter_clone/services/api.dart';
+import 'package:twitter_clone/util/router.dart';
+import 'package:twitter_clone/vms/base_vm.dart';
 import 'package:uuid/uuid.dart';
 
 class CreateTweetVM extends BaseVM {
@@ -21,24 +21,24 @@ class CreateTweetVM extends BaseVM {
 
     Tweet _t = mediaPath == null
         ? Tweet(
-            _tweetId,
             this._authorId,
             message,
+            id: _tweetId,
             hashtags: hashtags,
             mentions: mentions,
             urls: urls,
           )
         : Tweet(
-            _tweetId,
             this._authorId,
             message,
+            id: _tweetId,
             hashtags: hashtags,
             mentions: mentions,
             urls: urls,
             media: Media(mediaPath, type),
           );
 
-    bool resp = await _api.createTweet(_t);
+    Tweet resp = await _api.createTweet(_t);
 
     return null;
   }

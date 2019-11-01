@@ -2,12 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:twitter/models/linked_items.dart';
-import 'package:twitter/models/user.dart';
-import 'package:twitter/theme/color.dart';
-import 'package:twitter/util/router.dart';
-import 'package:twitter/vms/tweet_vm.dart';
-import 'package:twitter/widgets/video_aspect_ratio.dart';
+import 'package:twitter_clone/models/linked_items.dart';
+import 'package:twitter_clone/models/user.dart';
+import 'package:twitter_clone/theme/color.dart';
+import 'package:twitter_clone/util/router.dart';
+import 'package:twitter_clone/vms/tweet_vm.dart';
+import 'package:twitter_clone/widgets/video_aspect_ratio.dart';
 import 'package:video_player/video_player.dart';
 
 class TweetListItem extends StatefulWidget {

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:twitter/util/router.dart';
+import 'package:twitter_clone/util/router.dart';
 
-import 'package:twitter/vms/auth_vm.dart';
+import 'package:twitter_clone/vms/auth_vm.dart';
 
 class LoginScreen extends StatefulWidget {
   @override

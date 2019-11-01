@@ -1,12 +1,12 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:twitter/dummy_data.dart';
-import 'package:twitter/models/linked_items.dart';
-import 'package:twitter/models/user.dart';
-import 'package:twitter/services/api.dart';
-import 'package:twitter/util/router.dart';
-import 'package:twitter/vms/base_vm.dart';
-import 'package:twitter/models/tweet.dart';
+import 'package:twitter_clone/dummy_data.dart';
+import 'package:twitter_clone/models/linked_items.dart';
+import 'package:twitter_clone/models/user.dart';
+import 'package:twitter_clone/services/api.dart';
+import 'package:twitter_clone/util/router.dart';
+import 'package:twitter_clone/vms/base_vm.dart';
+import 'package:twitter_clone/models/tweet.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TweetVM extends BaseVM with ChangeNotifier {

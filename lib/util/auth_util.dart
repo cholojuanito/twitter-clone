@@ -46,4 +46,6 @@ class AuthResponse {
   final String message;
 
   AuthResponse(this.status, this.message);
+
+  set message(String m) => this.message = m;
 }

@@ -1,8 +1,8 @@
-import 'package:twitter/models/user.dart';
-import 'package:twitter/services/api.dart';
-import 'package:twitter/vms/base_vm.dart';
-import 'package:twitter/services/authentication.dart';
-import 'package:twitter/util/auth_util.dart';
+import 'package:twitter_clone/models/user.dart';
+import 'package:twitter_clone/services/api.dart';
+import 'package:twitter_clone/vms/base_vm.dart';
+import 'package:twitter_clone/services/authentication.dart';
+import 'package:twitter_clone/util/auth_util.dart';
 
 class AuthVM extends BaseVM {
   AuthenticationService _authService;

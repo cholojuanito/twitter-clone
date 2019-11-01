@@ -1,7 +1,7 @@
-import 'package:twitter/dummy_data.dart';
-import 'package:twitter/models/user.dart';
-import 'package:twitter/services/authentication.dart';
-import 'package:twitter/util/auth_util.dart';
+import 'package:twitter_clone/dummy_data.dart';
+import 'package:twitter_clone/models/user.dart';
+import 'package:twitter_clone/services/authentication.dart';
+import 'package:twitter_clone/util/auth_util.dart';
 import 'package:uuid/uuid.dart';
 
 import 'api.dart';
@@ -62,12 +62,12 @@ class AWSAuthenticationService extends AuthenticationService {
     //   return _passResp;
     // }
 
-    User newuser = User(Uuid().v4(), alias, name);
+    User newuser = User(alias, name, id: Uuid().v4());
     if (profilePicPath != null) {
       newuser.changeProfilePic(profilePicPath);
     }
 
-    bool resp = await _api.createUser(newuser);
+    User resp = await _api.createUser(newuser);
 
     // Create session
     this.currUser = newuser;
