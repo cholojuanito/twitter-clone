@@ -17,23 +17,20 @@ class TweetListItem extends StatefulWidget {
   TweetListItem({this.mediaPath, this.type});
 
   @override
-  _TweetListItemState createState() => mediaPath != null
-      ? _TweetListItemState(mediaFile: File(mediaPath), type: type)
-      : _TweetListItemState();
+  _TweetListItemState createState() =>
+      mediaPath != null ? _TweetListItemState() : _TweetListItemState();
 }
 
 class _TweetListItemState extends State<TweetListItem> {
   VideoPlayerController _videoCntrlr;
   Future<void> _initVideoPlayerFuture;
-  File mediaFile;
-  MediaType type;
 
-  _TweetListItemState({this.mediaFile, this.type});
+  _TweetListItemState();
 
   @override
   void initState() {
-    if (this.mediaFile != null && this.type == MediaType.Video) {
-      this._videoCntrlr = VideoPlayerController.file(mediaFile);
+    if (this.widget.mediaPath != null && this.widget.type == MediaType.Video) {
+      this._videoCntrlr = VideoPlayerController.network(widget.mediaPath);
       this._initVideoPlayerFuture = _videoCntrlr.initialize();
       this._videoCntrlr.setLooping(true);
       this._videoCntrlr.setVolume(1.0);
@@ -92,8 +89,8 @@ class _TweetListItemState extends State<TweetListItem> {
   }
 
   Widget _showImage() {
-    return Image.file(
-      this.mediaFile,
+    return Image.network(
+      this.widget.mediaPath,
       fit: BoxFit.cover,
     );
   }
@@ -144,7 +141,7 @@ class _TweetListItemState extends State<TweetListItem> {
                     backgroundImage:
                         vm.author.profilePic.route == User.defaultProfileURL
                             ? AssetImage(vm.author.profilePic.route)
-                            : FileImage(File(vm.author.profilePic.route)),
+                            : NetworkImage(vm.author.profilePic.route),
                   ),
                 ),
                 Column(
@@ -179,7 +176,7 @@ class _TweetListItemState extends State<TweetListItem> {
                       width: _size.width * 0.75,
                       child: vm.linkedMessage,
                     ),
-                    this.mediaFile != null
+                    vm.tweet?.media?.route != null
                         ? _buildMediaWidget(
                             _size.height * 0.5,
                             _size.width * 0.75,

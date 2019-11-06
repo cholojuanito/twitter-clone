@@ -51,7 +51,7 @@ class _UserListItemState extends State<UserListItem> {
               backgroundImage:
                   vm.otherUser.profilePic.route == User.defaultProfileURL
                       ? AssetImage(vm.otherUser.profilePic.route)
-                      : FileImage(File(vm.otherUser.profilePic.route)),
+                      : NetworkImage(vm.otherUser.profilePic.route),
             ),
           ),
           title: Text('${vm.otherUser.fullName}'),

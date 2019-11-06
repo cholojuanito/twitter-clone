@@ -14,9 +14,9 @@ class FollowingVM extends BaseVM with ChangeNotifier {
 
   void toggleFollowStatus(bool follow) {
     if (follow) {
-      api.follow(loggedInUser.id, otherUser.id);
+      api.createFollow(Following(loggedInUser.id, otherUser.id));
     } else {
-      api.unfollow(loggedInUser.id, otherUser.id);
+      api.updateFollow(Following(loggedInUser.id, otherUser.id), 'add');
     }
   }
 

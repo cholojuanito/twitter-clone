@@ -1,6 +1,5 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:twitter_clone/dummy_data.dart';
 import 'package:twitter_clone/models/linked_items.dart';
 import 'package:twitter_clone/models/user.dart';
 import 'package:twitter_clone/services/api.dart';
@@ -27,10 +26,7 @@ class TweetVM extends BaseVM with ChangeNotifier {
   TextStyle _linkStyle;
   TextStyle _normalStyle;
 
-  TweetVM(this.tweet, this._api, {this.enlargeText = false}) {
-    this.author = getAuthorOfTweet(this.tweet.authorId);
-    // .then((u) => this.author = u)
-    // .catchError((e) => print('Error getting user by id'));
+  TweetVM(this.tweet, this.author, this._api, {this.enlargeText = false}) {
     this._recognizers = [];
     this._linkStyle = TextStyle(
       color: Colors.blue,
@@ -52,22 +48,18 @@ class TweetVM extends BaseVM with ChangeNotifier {
     super.dispose();
   }
 
-  User getAuthorOfTweet(String authorId) {
-    return allUsers.firstWhere((u) => u.id == authorId);
-    // return await _api.getUserById(authorId);
-  }
-
 // find out if checking each hashtag or this method works best
   Text _createMessageWidget() {
     List<TextSpan> span = [];
-    List<String> words = this.tweet.message.split(Api.wordSplitRegex);
+    List<String> words = this.tweet.message.split(' ');
     words.forEach((w) {
       if (w.length > 1) {
         var _trimmed = w.trim();
         if (this._isHashtag(_trimmed)) {
           GestureRecognizer _r = TapGestureRecognizer()
             ..onTap = () {
-              Future<Hashtag> future = _api.getHashtag(_trimmed.substring(1));
+              Future<Hashtag> future =
+                  this._api.getHashtag(_trimmed.substring(1));
               future.then((h) {
                 appNavKey.currentState.pushNamed(hashtagRoute,
                     arguments: HashtagRouteArguments(h));
@@ -79,7 +71,7 @@ class TweetVM extends BaseVM with ChangeNotifier {
           _recognizers.add(_r);
           span.add(
             TextSpan(
-              text: '$w',
+              text: '$w ',
               style: _linkStyle,
               recognizer: _r,
             ),
@@ -87,10 +79,11 @@ class TweetVM extends BaseVM with ChangeNotifier {
         } else if (this._isMention(_trimmed)) {
           GestureRecognizer _r = TapGestureRecognizer()
             ..onTap = () {
-              Future<User> future = _api.getUserByAlias(_trimmed.substring(1));
-              future.then((h) {
+              Future<User> future =
+                  this._api.getUserByAlias(_trimmed.substring(1));
+              future.then((u) {
                 appNavKey.currentState.pushNamed(profileRoute,
-                    arguments: ProfileRouteArguments(h));
+                    arguments: ProfileRouteArguments(u));
               }).catchError(
                 (e) => print('Error when routing to profile! $e'),
               );
@@ -99,25 +92,33 @@ class TweetVM extends BaseVM with ChangeNotifier {
           _recognizers.add(_r);
           span.add(
             TextSpan(
-              text: '$w',
+              text: '$w ',
               style: _linkStyle,
               recognizer: _r,
             ),
           );
         } else if (this._isUrl(_trimmed)) {
+          String url;
+          if (_trimmed.contains(Api.beginUrlRegex)) {
+            url = Uri.encodeFull(_trimmed).toString();
+          } else {
+            url = Uri.encodeFull('http://' + _trimmed).toString();
+          }
           GestureRecognizer _r = TapGestureRecognizer()
             ..onTap = () {
-              if (_trimmed.contains(RegExp(r'(https:\/\/|http:\/\/)?'))) {
-                launch(_trimmed);
-              } else {
-                launch(Uri.encodeFull('https://${_trimmed}'));
-              }
+              canLaunch(url).then((val) {
+                if (val) {
+                  launch(url);
+                } else {
+                  // launch(url);
+                }
+              });
             };
 
           _recognizers.add(_r);
           span.add(
             TextSpan(
-              text: '$w',
+              text: '$w ',
               style: _linkStyle,
               recognizer: _r,
             ),
@@ -125,7 +126,7 @@ class TweetVM extends BaseVM with ChangeNotifier {
         } else {
           span.add(
             TextSpan(
-              text: '$w',
+              text: '$w ',
               style: _normalStyle,
             ),
           );
@@ -133,7 +134,7 @@ class TweetVM extends BaseVM with ChangeNotifier {
       } else {
         span.add(
           TextSpan(
-            text: '$w',
+            text: '$w ',
             style: _normalStyle,
           ),
         );
@@ -161,7 +162,7 @@ class TweetVM extends BaseVM with ChangeNotifier {
   bool _isMention(String word) {
     if (word.startsWith(ALIAS_PREFIX)) {
       for (var m in this.tweet.mentions) {
-        if (m.userId == word.substring(1)) {
+        if (m.alias == word.substring(1)) {
           return true;
         }
       }

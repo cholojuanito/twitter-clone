@@ -3,7 +3,6 @@ import 'package:twitter_clone/models/tweet.dart';
 import 'package:twitter_clone/services/api.dart';
 import 'package:twitter_clone/util/router.dart';
 import 'package:twitter_clone/vms/base_vm.dart';
-import 'package:uuid/uuid.dart';
 
 class CreateTweetVM extends BaseVM {
   Api _api;
@@ -11,10 +10,9 @@ class CreateTweetVM extends BaseVM {
 
   CreateTweetVM(this._authorId, this._api);
 
-  Future create(String message,
+  Future<Tweet> create(String message,
       {String mediaPath, MediaType type = MediaType.Image}) async {
-    var _tweetId = Uuid().v4();
-    var linkableItems = _parseMessage(message, _tweetId);
+    var linkableItems = _parseMessage(message);
     List<Hashtag> hashtags = linkableItems['h'];
     List<Mention> mentions = linkableItems['m'];
     List<ExternalURL> urls = linkableItems['u'];
@@ -23,7 +21,6 @@ class CreateTweetVM extends BaseVM {
         ? Tweet(
             this._authorId,
             message,
-            id: _tweetId,
             hashtags: hashtags,
             mentions: mentions,
             urls: urls,
@@ -31,7 +28,6 @@ class CreateTweetVM extends BaseVM {
         : Tweet(
             this._authorId,
             message,
-            id: _tweetId,
             hashtags: hashtags,
             mentions: mentions,
             urls: urls,
@@ -40,16 +36,16 @@ class CreateTweetVM extends BaseVM {
 
     Tweet resp = await _api.createTweet(_t);
 
-    return null;
+    return resp;
   }
 
-  Map<String, dynamic> _parseMessage(String message, String tweetId) {
+  Map<String, dynamic> _parseMessage(String message) {
     List<Hashtag> hashtags = [];
     List<Mention> mentions = [];
     List<ExternalURL> urls = [];
 
     if (Api.hashtagRegex.hasMatch(message)) {
-      hashtags = _findHashtags(message, tweetId);
+      hashtags = _findHashtags(message);
     }
     if (Api.mentionRegex.hasMatch(message)) {
       mentions = _findMentions(message);
@@ -65,11 +61,11 @@ class CreateTweetVM extends BaseVM {
     };
   }
 
-  List<Hashtag> _findHashtags(String m, String tweetId) {
+  List<Hashtag> _findHashtags(String m) {
     List<Hashtag> _h = [];
     var matches = Api.hashtagRegex.allMatches(m).map((m) => m.group(0));
     for (var match in matches) {
-      _h.add(Hashtag(hashtagRoute, match.substring(1), tweetIds: [tweetId]));
+      _h.add(Hashtag(hashtagRoute, match.substring(1)));
     }
     return _h;
   }
