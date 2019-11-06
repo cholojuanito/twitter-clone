@@ -42,10 +42,12 @@ AuthResponse isValidPassword(String password) {
 }
 
 class AuthResponse {
-  final int status;
-  final String message;
+  int status;
+  String _message;
 
-  AuthResponse(this.status, this.message);
+  AuthResponse(this.status, this._message);
 
-  set message(String m) => this.message = m;
+  String get message => this._message;
+
+  set message(String m) => this._message = m;
 }

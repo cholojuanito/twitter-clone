@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:outline_material_icons/outline_material_icons.dart';
@@ -77,108 +78,114 @@ class _SignUpScreenState extends State<SignUpScreen> {
             constraints: BoxConstraints(
               minHeight: constraints.maxHeight,
             ),
-            child: Center(
-              child: Container(
-                padding: EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: <Widget>[
-                    Container(
-                      child: Stack(
-                        children: <Widget>[
-                          Positioned(
-                            child: CircleAvatar(
-                              maxRadius: constraints.maxHeight * 0.15,
-                              backgroundImage: _profilePic != null
-                                  ? FileImage(_profilePic)
-                                  : AssetImage(User.defaultProfileURL),
-                            ),
-                          ),
-                          Positioned(
-                            right: 5.0,
-                            bottom: 5.0,
-                            child: GestureDetector(
-                              child: Container(
-                                width: constraints.maxHeight * 0.075,
-                                height: constraints.maxHeight * 0.075,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: TwitterColor.mystic,
-                                  border: Border.all(
-                                    width: 2.5,
-                                    color: TwitterColor.white,
+            child: Consumer<AuthVM>(builder: (context, vm, _) {
+              return Center(
+                child: !vm.isLoading
+                    ? Container(
+                        padding: EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: <Widget>[
+                            Container(
+                              child: Stack(
+                                children: <Widget>[
+                                  Positioned(
+                                    child: CircleAvatar(
+                                      maxRadius: constraints.maxHeight * 0.15,
+                                      backgroundImage: _profilePic != null
+                                          ? FileImage(_profilePic)
+                                          : AssetImage(User.defaultProfileURL),
+                                    ),
                                   ),
-                                ),
-                                child: Icon(
-                                  OMIcons.cameraAlt,
-                                  color: TwitterColor.black,
+                                  Positioned(
+                                    right: 5.0,
+                                    bottom: 5.0,
+                                    child: GestureDetector(
+                                      child: Container(
+                                        width: constraints.maxHeight * 0.075,
+                                        height: constraints.maxHeight * 0.075,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: TwitterColor.mystic,
+                                          border: Border.all(
+                                            width: 2.5,
+                                            color: TwitterColor.white,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          OMIcons.cameraAlt,
+                                          color: TwitterColor.black,
+                                        ),
+                                      ),
+                                      onTap: () {
+                                        showModalBottomSheet(
+                                          context: context,
+                                          builder: _buildBottomSheet,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              child: TextField(
+                                controller: _signUpNameCntrlr,
+                                decoration: InputDecoration(
+                                  labelText: 'Full name',
                                 ),
                               ),
-                              onTap: () {
-                                showModalBottomSheet(
-                                  context: context,
-                                  builder: _buildBottomSheet,
-                                );
-                              },
                             ),
-                          ),
+                            Container(
+                              child: TextField(
+                                controller: _signUpAliasCntrlr,
+                                decoration: InputDecoration(
+                                  labelText: 'Alias',
+                                  prefix: Text('@'),
+                                ),
+                              ),
+                            ),
+                            Container(
+                              child: TextField(
+                                controller: _signUpPasswordCntrlr,
+                                obscureText: true,
+                                decoration: InputDecoration(
+                                  labelText: 'Password',
+                                ),
+                              ),
+                            ),
+                            MaterialButton(
+                              child: Text('Sign Up'),
+                              color: Colors.blue,
+                              textColor: Colors.white,
+                              onPressed: _canSignUp
+                                  ? () {
+                                      _performSignUp(vm);
+                                    }
+                                  : null,
+                            ),
+                            Container(
+                              margin:
+                                  const EdgeInsets.symmetric(vertical: 16.0),
+                              child: GestureDetector(
+                                child: Text('Login here'),
+                                onTap: () {
+                                  appNavKey.currentState.pop();
+                                },
+                              ),
+                            )
+                          ],
+                        ),
+                      )
+                    : Column(
+                        children: <Widget>[
+                          CircularProgressIndicator(),
+                          Text('Creating profile'),
                         ],
                       ),
-                    ),
-                    Container(
-                      child: TextField(
-                        controller: _signUpNameCntrlr,
-                        decoration: InputDecoration(
-                          labelText: 'Full name',
-                        ),
-                      ),
-                    ),
-                    Container(
-                      child: TextField(
-                        controller: _signUpAliasCntrlr,
-                        decoration: InputDecoration(
-                          labelText: 'Alias',
-                          prefix: Text('@'),
-                        ),
-                      ),
-                    ),
-                    Container(
-                      child: TextField(
-                        controller: _signUpPasswordCntrlr,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                        ),
-                      ),
-                    ),
-                    Consumer<AuthVM>(
-                      builder: (context, vm, _) {
-                        return MaterialButton(
-                          child: Text('Sign Up'),
-                          color: Colors.blue,
-                          textColor: Colors.white,
-                          onPressed: _canSignUp
-                              ? () {
-                                  _performSignUp(vm, context);
-                                }
-                              : null,
-                        );
-                      },
-                    ),
-                    Container(
-                      margin: const EdgeInsets.all(8.0),
-                      child: GestureDetector(
-                        child: Text('Login here'),
-                        onTap: () {
-                          appNavKey.currentState.pop();
-                        },
-                      ),
-                    )
-                  ],
-                ),
-              ),
-            ),
+              );
+            }),
           ),
         );
       }),
@@ -265,7 +272,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  void _performSignUp(AuthVM vm, BuildContext context) async {
+  void _performSignUp(AuthVM vm) async {
     vm
         .signUp(
       _signUpNameCntrlr.text,
@@ -275,20 +282,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
     )
         .then(
       (resp) {
-        Scaffold.of(context).showSnackBar(
-          SnackBar(
-            content: Text(resp.message),
-          ),
-        );
-
         // Reroute to the 'home' Profile Screen
         if (resp.status == 0) {
-          appNavKey.currentState.pushReplacementNamed(
-            profileRoute,
-            arguments: ProfileRouteArguments(
-              vm.getCurrentUser(),
-            ),
-          );
+          Crashlytics.instance.setUserIdentifier(vm.getCurrentUser().id);
+          Crashlytics.instance.setUserName(vm.getCurrentUser().fullName);
+          appNavKey.currentState.pushReplacementNamed(homeRoute);
         }
       },
     );

@@ -10,7 +10,7 @@ class AuthVM extends BaseVM {
   AuthVM(this._authService);
 
   User getCurrentUser() {
-    return this._authService.getCurrentUser();
+    return this._authService.getCurrentUserSync();
   }
 
   Future<AuthResponse> login(String name, String password) async {

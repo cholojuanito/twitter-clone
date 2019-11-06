@@ -1,11 +1,20 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
+import 'package:twitter_clone/models/linked_items.dart';
 import 'package:twitter_clone/models/user.dart';
 import 'package:twitter_clone/services/api.dart';
 import 'package:twitter_clone/services/authentication.dart';
 import 'package:twitter_clone/util/auth_util.dart';
 
 class FirebaseAuthenticationService extends AuthenticationService {
+  static final FirebaseAuthenticationService _instance =
+      FirebaseAuthenticationService._internal();
+  factory FirebaseAuthenticationService() {
+    // This makes AppState a singleton but is still callable with 'new'
+    return _instance;
+  }
+  FirebaseAuthenticationService._internal();
+
   Api _api;
   FirebaseAuth _fbAuth = FirebaseAuth.instance;
   static const String _fakeEmailDomain = '@twitter-clone-nomail.net';
@@ -15,20 +24,28 @@ class FirebaseAuthenticationService extends AuthenticationService {
   static const String _weakPasswordCode = 'ERROR_WEAK_PASSWORD';
   static const String _emailInUseCode = 'ERROR_EMAIL_ALREADY_IN_USE';
   static const Map<String, String> _codeRespMap = {
-    _invalidEmailCode: 'Invalid or incorrect alias',
-    _invalidPasswordCode: 'Invalid credentials',
+    _invalidEmailCode: 'Incorrect alias or password',
+    _invalidPasswordCode: 'Incorrect alias or password',
     _invalidUserCode: 'That alias does not exist. Please sign up first',
     _weakPasswordCode: 'Your password does not meet the security requirements',
     _emailInUseCode: 'A user is already using that alias',
   };
 
-  FirebaseAuthenticationService();
-
   @override
   set api(Api api) => _api = api;
 
   @override
-  User getCurrentUser() {
+  Future<User> getCurrentUserAsync() async {
+    var fbUser = await _fbAuth.currentUser();
+    if (fbUser == null) {
+      return null;
+    }
+    this.currUser = await _api.getUserById(fbUser.uid);
+    return this.currUser;
+  }
+
+  @override
+  User getCurrentUserSync() {
     return this.currUser;
   }
 
@@ -48,6 +65,9 @@ class FirebaseAuthenticationService extends AuthenticationService {
         case _invalidEmailCode:
           resp.message = _codeRespMap[_invalidEmailCode];
           break;
+        case _invalidUserCode:
+          resp.message = _codeRespMap[_invalidUserCode];
+          break;
         case _invalidPasswordCode:
           resp.message = _codeRespMap[_invalidPasswordCode];
           break;
@@ -55,13 +75,14 @@ class FirebaseAuthenticationService extends AuthenticationService {
           resp.message = _codeRespMap[_weakPasswordCode];
           break;
         default:
+          resp.message = 'An error occurred: ${error.message}';
       }
 
       return resp;
     }
 
     if (result.user != null && await result.user.getIdToken() != null) {
-      this.currUser = await _api.getUserByAlias(alias);
+      this.currUser = await _api.getUserById(result.user.uid);
       // Build state?
       resp = AuthResponse(0, 'Successfully logged in');
     } else {
@@ -76,6 +97,11 @@ class FirebaseAuthenticationService extends AuthenticationService {
       {String profilePicPath}) async {
     AuthResult result;
     AuthResponse resp;
+
+    AuthResponse _passResp = isValidPassword(password);
+    if (_passResp.status == -1) {
+      return _passResp;
+    }
 
     try {
       result = await _fbAuth.createUserWithEmailAndPassword(
@@ -95,6 +121,7 @@ class FirebaseAuthenticationService extends AuthenticationService {
           resp.message = _codeRespMap[_emailInUseCode];
           break;
         default:
+          resp.message = 'An error occurred: ${error.message}';
       }
 
       return resp;
@@ -104,8 +131,11 @@ class FirebaseAuthenticationService extends AuthenticationService {
       UserUpdateInfo updateInfo = UserUpdateInfo();
       updateInfo.displayName = name;
       await result.user.updateProfile(updateInfo);
-
-      this.currUser = await _api.createUser(User(alias, name));
+      User newUser = profilePicPath != null
+          ? User(alias, name,
+              profilePic: Media(profilePicPath, MediaType.Image))
+          : User(alias, name);
+      this.currUser = await _api.createUser(newUser);
       // Build state?
       resp = AuthResponse(0, 'Successfully logged in');
     } else {

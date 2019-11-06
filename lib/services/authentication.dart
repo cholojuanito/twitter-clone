@@ -10,7 +10,8 @@ abstract class AuthenticationService extends ChangeNotifier {
   // String currToken;
 
   /// Gets the currently logged in User
-  User getCurrentUser();
+  Future<User> getCurrentUserAsync();
+  User getCurrentUserSync();
 
   set api(Api api);
 
