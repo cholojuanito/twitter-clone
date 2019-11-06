@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
+import 'package:path/path.dart' as p;
 
-import 'package:twitter_clone/dummy_data.dart';
+import 'package:mime/mime.dart';
 import 'package:twitter_clone/models/following.dart';
 import 'package:twitter_clone/models/linked_items.dart';
 import 'package:twitter_clone/models/tweet.dart';
@@ -10,11 +12,13 @@ import 'package:twitter_clone/services/api.dart';
 import 'package:twitter_clone/services/authentication.dart';
 import 'package:twitter_clone/util/router.dart';
 import 'package:uuid/uuid.dart';
+import 'package:http/http.dart' as http;
 
-class AWSTwitterApi extends Api {
-  AuthenticationService _authService;
-  final String baseUrl =
-      'https://ei0piiispg.execute-api.us-west-1.amazonaws.com/mock-stage';
+class AWSTwitterApi implements Api {
+  AuthenticationService _authService; //TODO remove
+  http.Client _client;
+  final String baseUrl = 'ei0piiispg.execute-api.us-west-1.amazonaws.com';
+  final String apiVersion = '/v1';
   final String region = 'us-west-1';
   final String userEndpoint = '/user';
   final String followEndpoint = '/follow';
@@ -22,24 +26,48 @@ class AWSTwitterApi extends Api {
   final String hashtagEndpoint = '/hashtag';
   final String followersEndpoint = '/followers';
   final String followingEndpoint = '/following';
-  final String tweetsEndpoint = '/tweets';
+  final String storyEndpoint = '/tweets/story';
+  final String feedEndpoint = '/tweets/feed';
+  final String hashtagTweetsEndpoint = '/tweets/hashtag';
+  final String mediaEndpoint = '/media';
+  final Map<String, String> _baseHeaders = {
+    HttpHeaders.contentTypeHeader: 'application/json',
+  };
 
-  // static final AWSTwitterApi _awsApi = AWSTwitterApi._internal();
-  // AWSTwitterApi._internal();
-
-  // factory AWSTwitterApi.getInstance() {
-  //   return _awsApi;
-  // }
-
-  AWSTwitterApi(this._authService);
+  AWSTwitterApi(this._authService) {
+    _client = http.Client();
+  }
 
   @override
   Future<User> createUser(User user) async {
-    allUsers.add(user);
-    userStories[user.id] = [];
-    userFollowersMap[user.id] = [];
-    userFollowingMap[user.id] = [];
-    return user;
+    var endpoint = apiVersion + userEndpoint;
+    Uri url = Uri.https(baseUrl, endpoint);
+
+    if (user.profilePic.route != User.defaultProfileURL) {
+      File f = File(user.profilePic.route);
+      String url = await _uploadMedia(f, user.id);
+      if (url != null) {
+        user.profilePic = new Media(url, MediaType.Image);
+      } else {
+        throw Exception('Couldn\'t upload media, try again');
+      }
+    }
+
+    var params = user.toJson();
+    var resp = await _client.post(url, body: jsonEncode(params));
+    var body = jsonDecode(resp.body);
+
+    User u;
+    switch (resp.statusCode) {
+      case HttpStatus.ok:
+        u = User.fromJson(body['data']);
+        print('Success calling createUser');
+        break;
+      default:
+        print('Error calling createUser. Code: ${resp.statusCode}');
+    }
+
+    return u;
   }
 
   @override
@@ -50,39 +78,115 @@ class AWSTwitterApi extends Api {
 
   @override
   Future<User> getUserById(String id) async {
-    User user = allUsers.firstWhere((u) => u.id == id, orElse: () => null);
-    if (user == null) return null;
-    user.followers = _buildUsersFollowers(user);
-    user.following = _buildUsersFollowing(user);
-    user.story = Story(_buildUsersStory(user));
-    user.feed = Feed(_buildUsersFeed(user));
+    var endpoint = apiVersion + userEndpoint + '/id/$id';
+    Uri url = Uri.https(baseUrl, endpoint);
+
+    var resp = await _client.get(url);
+    var body = jsonDecode(resp.body);
+    User user;
+    switch (resp.statusCode) {
+      case HttpStatus.ok:
+        user = User.fromJson(body['data']);
+        print('Success calling getUserById');
+        break;
+
+      default:
+        print('Error calling getUserById. Code: ${resp.statusCode}');
+    }
+
     return user;
   }
 
   @override
   Future<User> getUserByAlias(String alias) async {
-    User user =
-        allUsers.firstWhere((u) => u.alias == alias, orElse: () => null);
-    if (user == null) return null;
-    user.followers = _buildUsersFollowers(user);
-    user.following = _buildUsersFollowing(user);
-    user.story = Story(_buildUsersStory(user));
-    user.feed = Feed(_buildUsersFeed(user));
+    var endpoint = apiVersion + userEndpoint + '/$alias';
+    Uri url = Uri.https(baseUrl, endpoint);
+
+    var resp = await _client.get(url);
+    var body = jsonDecode(resp.body);
+    User user;
+    switch (resp.statusCode) {
+      case HttpStatus.ok:
+        user = User.fromJson(body['data']);
+        print('Success calling getUserByAlias');
+        break;
+      case HttpStatus.internalServerError:
+      case HttpStatus.notImplemented:
+      case HttpStatus.badGateway:
+      case HttpStatus.serviceUnavailable:
+      case HttpStatus.gatewayTimeout:
+      case HttpStatus.httpVersionNotSupported:
+        print('500 error calling getUserByAlias. Code: ${resp.statusCode}');
+        break;
+      case HttpStatus.badRequest:
+      case HttpStatus.unauthorized:
+      case HttpStatus.forbidden:
+      case HttpStatus.notFound:
+        print('400 error calling getUserByAlias. Code: ${resp.statusCode}');
+
+        break;
+      default:
+        print('Error calling getUserByAlias. Code: ${resp.statusCode}');
+    }
+
     return user;
   }
 
   @override
-  Future<bool> updateUserProfilePic(User newUser, String newPath) async {
-    User user =
-        allUsers.firstWhere((u) => u.id == newUser.id, orElse: () => null);
+  Future<User> updateUserProfilePic(User user, String newPath) async {
+    var endpoint = apiVersion + userEndpoint;
+    Uri url = Uri.https(baseUrl, endpoint);
 
-    user.profilePic.route = newPath;
+    File f;
+    try {
+      f = File(newPath);
+    } catch (err) {
+      print('Unable to find file');
+      return null;
+    }
 
-    return true;
+    String newMediaUrl = await _uploadMedia(f, user.id);
+
+    Map params = {
+      'id': user.id,
+      'action': 'replace',
+      'value': {
+        'profilePicPath': newMediaUrl,
+        // 'name':
+      },
+    };
+    var resp = await _client.patch(url, body: jsonEncode(params));
+    var body = jsonDecode(resp.body);
+
+    User u;
+    switch (resp.statusCode) {
+      case HttpStatus.ok:
+        u = User.fromJson(body['data']);
+        print('Success calling updateUser');
+        break;
+      default:
+        print('Error calling updateUser. Code: ${resp.statusCode}');
+    }
+
+    return u != null ? u : user;
   }
 
   @override
   Future<Tweet> createTweet(Tweet tweet) async {
+    var endpoint = apiVersion + tweetEndpoint;
+    Uri url = Uri.https(baseUrl, endpoint);
+
+    if (tweet?.media != null) {
+      File f = File(tweet.media.route);
+      String url = await _uploadMedia(f, tweet.authorId);
+      if (url != null) {
+        var oldMediaType = tweet.media.type;
+        tweet.media = new Media(url, oldMediaType);
+      } else {
+        throw Exception('Couldn\'t upload media, try again');
+      }
+    }
+
     if (tweet.hashtags.length > 0) {
       for (var hashtag in tweet.hashtags) {
         var h = await getHashtag(hashtag.word);
@@ -97,7 +201,7 @@ class AWSTwitterApi extends Api {
       List toRemove = [];
       for (int i = 0; i < tweet.mentions.length; i++) {
         var m = tweet.mentions[i];
-        var u = await getUserByAlias(m.userId);
+        var u = await getUserByAlias(m.alias);
         if (u == null) {
           toRemove.add(i);
         }
@@ -106,32 +210,96 @@ class AWSTwitterApi extends Api {
         tweet.mentions.removeAt(idx);
       }
     }
-    allTweets.add(tweet);
-    userStories[tweet.authorId].add(tweet);
-    // Upload media
-    return tweet;
+
+    var params = tweet.toJson();
+    var resp = await _client.post(url, body: jsonEncode(params));
+    var body = jsonDecode(resp.body);
+
+    Tweet t;
+    switch (resp.statusCode) {
+      case HttpStatus.ok:
+        t = Tweet.fromJson(body['data']);
+        print('Success calling createTweet');
+        break;
+      default:
+        print('Error calling createTweet. Code: ${resp.statusCode}');
+    }
+
+    return tweet; //TODO change to 't'
   }
 
   @override
   Future<Tweet> getTweetById(String tweetId) async {
-    return allTweets.firstWhere((t) => t.id == tweetId, orElse: () => null);
+    var endpoint = apiVersion + tweetEndpoint + '/id/$tweetId';
+    Uri url = Uri.https(baseUrl, endpoint);
+
+    var resp = await _client.get(url);
+    var body = jsonDecode(resp.body);
+
+    Tweet t;
+    switch (resp.statusCode) {
+      case HttpStatus.ok:
+        t = Tweet.fromJson(body['data']);
+        print('Success calling createTweet');
+        break;
+      default:
+        print('Error calling createTweet. Code: ${resp.statusCode}');
+    }
+
+    return t;
   }
 
   @override
   Future<Hashtag> createHashtag(String word, String firstTweetId) async {
-    // TODO maybe throw in checking for duplicates here?
-    Hashtag h = Hashtag(hashtagRoute, word, tweetIds: [firstTweetId]);
-    allHashtags.add(h);
-    hashtagTweets[h.word] = h.tweetIds;
+    var endpoint = apiVersion + hashtagEndpoint;
+    Uri url = Uri.https(baseUrl, endpoint);
+
+    Map params = {
+      'word': word,
+      'tweetId': firstTweetId,
+    };
+    var resp = await _client.post(url, body: jsonEncode(params));
+    var body = jsonDecode(resp.body);
+
+    Hashtag h;
+    switch (resp.statusCode) {
+      case HttpStatus.ok:
+        h = Hashtag.fromJson(body['data']);
+        print('Success calling createHashtag');
+        break;
+      default:
+        print('Error calling createHashtag. Code: ${resp.statusCode}');
+    }
+
     return h;
   }
 
   @override
   Future<bool> addTweetToHashtag(String word, String tweetId) async {
-    Hashtag h = await getHashtag(word);
-    hashtagTweets[h.word].add(tweetId);
-    h.tweetIds = hashtagTweets[h.word];
-    return true;
+    var endpoint = apiVersion + hashtagEndpoint;
+    Uri url = Uri.https(baseUrl, endpoint);
+    Map params = {
+      'word': word,
+      'action': 'add',
+      'value': {
+        'tweetId': tweetId,
+      },
+    };
+
+    var resp = await this._client.patch(url, body: jsonEncode(params));
+    var body = jsonDecode(resp.body);
+
+    Hashtag hashtag;
+    switch (resp.statusCode) {
+      case HttpStatus.ok:
+        hashtag = Hashtag.fromJson(body['data']);
+        print('Success calling getHashtag');
+        break;
+      default:
+        print('Error calling getHashtag. Code: ${resp.statusCode}');
+    }
+
+    return hashtag != null ? true : false;
   }
 
   @override
@@ -141,57 +309,194 @@ class AWSTwitterApi extends Api {
 
   @override
   Future<Hashtag> getHashtag(String word) async {
-    return allHashtags.firstWhere((h) => h.word == word, orElse: () => null);
+    var endpoint = apiVersion + hashtagEndpoint + '/id/$word';
+    Uri url = Uri.https(baseUrl, endpoint);
+
+    var resp = await _client.get(url);
+    var body = jsonDecode(resp.body);
+
+    Hashtag hashtag;
+    switch (resp.statusCode) {
+      case HttpStatus.ok:
+        hashtag = Hashtag.fromJson(body['data']);
+        print('Success calling getHashtag');
+        break;
+      default:
+        print('Error calling getHashtag. Code: ${resp.statusCode}');
+    }
+
+    return hashtag;
   }
 
   @override
-  Future<bool> follow(String currUserId, String otherUserId) async {
-    Following newFollow = Following(currUserId, otherUserId, id: Uuid().v4());
-    allFollows.add(newFollow);
-    userFollowersMap[otherUserId].add(newFollow);
-    userFollowingMap[currUserId].add(newFollow);
-    return true;
+  Future<Following> getFollowById(String id) async {
+    var endpoint = apiVersion + followEndpoint + '/id/$id';
+    Uri url = Uri.https(baseUrl, endpoint);
+
+    var resp = await _client.get(url);
+    var body = jsonDecode(resp.body);
+
+    switch (resp.statusCode) {
+      case HttpStatus.ok:
+        Following followTest = Following.fromJson(body['data']);
+        print('Success calling getFollowById');
+        break;
+      default:
+        print('Error calling getFollowById. Code: ${resp.statusCode}');
+    }
   }
 
   @override
-  Future<bool> unfollow(String currUserId, String otherUserId) async {
-    allFollows.removeWhere(
-        (f) => f.followerId == currUserId && f.followeeId == otherUserId);
-    userFollowersMap[otherUserId].removeWhere(
-        (f) => f.followerId == currUserId && f.followeeId == otherUserId);
-    userFollowingMap[currUserId].removeWhere(
-        (f) => f.followerId == currUserId && f.followeeId == otherUserId);
-    return true;
+  Future<Following> getFollowByUserIds(
+      String followerId, String followeeId) async {
+    var endpoint = apiVersion + followEndpoint + '/$followerId/$followeeId';
+    Uri url = Uri.https(baseUrl, endpoint);
+
+    var resp = await _client.get(url);
+    var body = jsonDecode(resp.body);
+
+    switch (resp.statusCode) {
+      case HttpStatus.ok:
+        Following followTest = Following.fromJson(body['data']);
+        print('Success calling getFollowByUserIds');
+        break;
+      default:
+        print('Error calling getFollowByUserIds. Code: ${resp.statusCode}');
+    }
+  }
+
+  @override
+  Future<Following> createFollow(Following follow) async {
+    var endpoint = apiVersion + followEndpoint;
+    Uri url = Uri.https(baseUrl, endpoint);
+
+    Map params = follow.toJson();
+    var resp = await _client.post(url, body: jsonEncode(params));
+    var body = jsonDecode(resp.body);
+
+    Following f;
+    switch (resp.statusCode) {
+      case HttpStatus.ok:
+        f = Following.fromJson(body['data']);
+        print('Success calling follow');
+        break;
+      default:
+        print('Error calling follow. Code: ${resp.statusCode}');
+    }
+    return f != null ? f : null;
+  }
+
+  @override
+  Future<Following> updateFollow(Following follow, String action) async {
+    var endpoint = apiVersion +
+        followEndpoint +
+        '/${follow.followerId}/${follow.followeeId}';
+    Uri url = Uri.https(baseUrl, endpoint);
+
+    Map params = {
+      'id': follow.id,
+      'action': action,
+      'value': {
+        'active': action == 'follow' ? true : false,
+      },
+    };
+    var resp = await _client.patch(url, body: jsonEncode(params));
+    var body = jsonDecode(resp.body);
+
+    Following f;
+    switch (resp.statusCode) {
+      case HttpStatus.ok:
+        f = Following.fromJson(body['data']);
+        print('Success calling updateFollow');
+        break;
+      default:
+        print('Error calling updateFollow. Code: ${resp.statusCode}');
+    }
+
+    follow.isActive = action == 'follow';
+    return follow;
   }
 
   @override
   Future<List<Tweet>> getFeed(String userId,
       {String lastKey, int pageSize = 10}) async {
-    User u = await getUserById(userId);
-    List<Tweet> moreItems = List.from(u.feed.tweets.sublist(0, 5));
-    // u.feed.tweets.addAll(moreItems);
+    var endpoint = apiVersion + feedEndpoint + '/$userId';
+    Map<String, String> query = {
+      'lastKey': lastKey,
+      'pageSize': pageSize.toString()
+    };
+    Uri url = Uri.https(baseUrl, endpoint, query);
+
+    var resp = await _client.get(url);
+    Map body = jsonDecode(resp.body);
+
+    List<Tweet> moreItems = [];
+
+    switch (resp.statusCode) {
+      case HttpStatus.ok:
+        for (var t in body['data']) {
+          moreItems.add(Tweet.fromJson(t));
+        }
+        print('Success calling getFeed');
+        break;
+      default:
+        print('Error calling getFeed. Code: ${resp.statusCode}');
+    }
+
     return moreItems;
   }
 
   @override
   Future<List<Tweet>> getStory(String userId,
       {String lastKey, int pageSize = 10}) async {
-    User u = await getUserById(userId);
-    List<Tweet> moreItems = List.from(u.story.tweets.sublist(0, 5));
-    // u.story.tweets.addAll(moreItems);
+    var endpoint = apiVersion + storyEndpoint + '/$userId';
+    Map<String, String> query = {
+      'lastKey': lastKey,
+      'pageSize': pageSize.toString()
+    };
+    Uri url = Uri.https(baseUrl, endpoint, query);
+
+    var resp = await _client.get(url);
+    Map body = jsonDecode(resp.body);
+    List<Tweet> moreItems = [];
+
+    switch (resp.statusCode) {
+      case HttpStatus.ok:
+        for (var t in body['data']) {
+          moreItems.add(Tweet.fromJson(t));
+        }
+        print('Success calling getStory');
+        break;
+      default:
+        print('Error calling getStory. Code: ${resp.statusCode}');
+    }
+
     return moreItems;
   }
 
   @override
   Future<List<Tweet>> getTweetsByHashtag(String word,
       {String lastKey, int pageSize = 10}) async {
-    Hashtag h = await getHashtag(word);
-    List<String> ids = List.from(h.tweetIds.sublist(0, 3));
+    var endpoint = apiVersion + hashtagTweetsEndpoint + '/$word';
+    Map<String, String> query = {
+      'lastKey': lastKey,
+      'pageSize': pageSize.toString()
+    };
+    Uri url = Uri.https(baseUrl, endpoint, query);
+
+    var resp = await _client.get(url);
+    Map body = jsonDecode(resp.body);
     List<Tweet> moreItems = [];
 
-    for (var id in ids.sublist(0, 3)) {
-      moreItems
-          .add(allTweets.firstWhere((t) => t.id == id, orElse: () => null));
+    switch (resp.statusCode) {
+      case HttpStatus.ok:
+        for (var t in body['data']) {
+          moreItems.add(Tweet.fromJson(t));
+        }
+        print('Success calling getTweetsByHashtag');
+        break;
+      default:
+        print('Error calling getTweetsByHashtag. Code: ${resp.statusCode}');
     }
 
     return moreItems;
@@ -200,46 +505,91 @@ class AWSTwitterApi extends Api {
   @override
   Future<List<User>> getFollowers(String userId,
       {String lastKey, int pageSize = 10}) async {
-    // TODO: implement getNextFollowers
-    return null;
+    var endpoint = apiVersion + followersEndpoint + '/$userId';
+    Map<String, String> query = {
+      'lastKey': lastKey,
+      'pageSize': pageSize.toString()
+    };
+    Uri url = Uri.https(baseUrl, endpoint, query);
+
+    var resp = await _client.get(url);
+    Map body = jsonDecode(resp.body);
+    List<User> moreItems = [];
+
+    switch (resp.statusCode) {
+      case HttpStatus.ok:
+        for (var u in body['data']) {
+          moreItems.add(User.fromJson(u));
+        }
+        print('Success calling getFollowers');
+        break;
+      default:
+        print('Error calling getFollowers. Code: ${resp.statusCode}');
+    }
+    return moreItems;
   }
 
   @override
   Future<List<User>> getFollowing(String userId,
       {String lastKey, int pageSize = 10}) async {
-    // TODO: implement getNextFollowing
-    return null;
-  }
+    var endpoint = apiVersion + followingEndpoint + '/$userId';
+    Map<String, String> query = {
+      'lastKey': lastKey,
+      'pageSize': pageSize.toString()
+    };
+    Uri url = Uri.https(baseUrl, endpoint, query);
 
-  Future<String> _uploadMedia(File media) async {}
+    var resp = await _client.get(url);
+    Map body = jsonDecode(resp.body);
+    List<User> moreItems = [];
 
-  List<Tweet> _buildUsersStory(User u) {
-    // var t = allTweets.where((t) => t.authorId == u.id).toList();
-    var t = userStories[u.id];
-    t.sort();
-    return t.reversed.toList();
-  }
-
-  List<Tweet> _buildUsersFeed(User u) {
-    List<Tweet> feed = [];
-    for (int i = 0; i < u.following.length; i++) {
-      var tweets = userStories[u.following[i].followeeId];
-      // var tweets = allTweets
-      //     .where((t) => t.authorId == u.following[i].followeeId)
-      //     .toList();
-      feed.addAll(tweets);
+    switch (resp.statusCode) {
+      case HttpStatus.ok:
+        for (var u in body['data']) {
+          moreItems.add(User.fromJson(u));
+        }
+        print('Success calling getFollowing');
+        break;
+      default:
+        print('Error calling getFollowing. Code: ${resp.statusCode}');
     }
-    feed.sort();
-    return feed.reversed.toList();
+    return moreItems;
   }
 
-  List<Following> _buildUsersFollowers(User u) {
-    List<Following> list = userFollowersMap[u.id];
-    return list != null ? list : [];
-  }
+  Future<String> _uploadMedia(File media, String userId) async {
+    print('uploading media');
+    var endpoint = apiVersion + mediaEndpoint;
+    Uri url = Uri.https(baseUrl, endpoint);
+    String encoded = base64Encode(media.readAsBytesSync());
+    String mimeType = lookupMimeType(media.path);
+    String ext = p.extension(media.path);
 
-  List<Following> _buildUsersFollowing(User u) {
-    List<Following> list = userFollowingMap[u.id];
-    return list != null ? list : [];
+    Map headers = {
+      HttpHeaders.contentTypeHeader: mimeType,
+    };
+
+    Map<String, String> params = {
+      'userId': userId,
+      'mimeType': mimeType,
+      'extension': ext,
+      'encodedMedia': encoded,
+      'isBase64Encoded': true.toString()
+    };
+
+    var resp = await _client.post(url, body: jsonEncode(params));
+
+    String mediaUrl;
+    switch (resp.statusCode) {
+      case HttpStatus.ok:
+        Map body = jsonDecode(resp.body);
+        mediaUrl = body['url'];
+        break;
+      default:
+        print('Bad http request, unable to upload media');
+    }
+
+    print('Finished uploading media');
+
+    return mediaUrl;
   }
 }
