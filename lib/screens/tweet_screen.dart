@@ -15,24 +15,20 @@ class TweetScreen extends StatefulWidget {
   TweetScreen({this.mediaPath, this.type});
 
   @override
-  _TweetScreenState createState() => mediaPath != null
-      ? _TweetScreenState(mediaFile: File(mediaPath), type: type)
-      : _TweetScreenState();
+  _TweetScreenState createState() =>
+      mediaPath != null ? _TweetScreenState() : _TweetScreenState();
 }
 
 class _TweetScreenState extends State<TweetScreen> {
   VideoPlayerController _videoCntrlr;
   Future<void> _initVideoPlayerFuture;
-  File mediaFile;
-  MediaType type;
-  // TODO this can be changed once the files are fetched over the network
 
-  _TweetScreenState({this.mediaFile, this.type});
+  _TweetScreenState();
 
   @override
   void initState() {
-    if (this.mediaFile != null && this.type == MediaType.Video) {
-      this._videoCntrlr = VideoPlayerController.file(mediaFile);
+    if (this.widget.mediaPath != null && this.widget.type == MediaType.Video) {
+      this._videoCntrlr = VideoPlayerController.network(this.widget.mediaPath);
       this._initVideoPlayerFuture = _videoCntrlr.initialize();
       this._videoCntrlr.setLooping(true);
       this._videoCntrlr.setVolume(1.0);
@@ -91,8 +87,8 @@ class _TweetScreenState extends State<TweetScreen> {
   }
 
   Widget _showImage() {
-    return Image.file(
-      this.mediaFile,
+    return Image.network(
+      this.widget.mediaPath,
       fit: BoxFit.cover,
     );
   }
@@ -143,7 +139,7 @@ class _TweetScreenState extends State<TweetScreen> {
                               backgroundImage: vm.author.profilePic.route ==
                                       User.defaultProfileURL
                                   ? AssetImage(vm.author.profilePic.route)
-                                  : FileImage(File(vm.author.profilePic.route)),
+                                  : NetworkImage(vm.author.profilePic.route),
                             ),
                           ),
                           Expanded(
@@ -188,7 +184,7 @@ class _TweetScreenState extends State<TweetScreen> {
                           )
                         ],
                       ),
-                      this.mediaFile != null
+                      vm.tweet?.media?.route != null
                           ? _buildMediaWidget(
                               constraints.maxHeight * 0.9,
                               constraints.maxWidth * 0.9,

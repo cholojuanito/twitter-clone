@@ -18,6 +18,12 @@ abstract class TweetCollection with ChangeNotifier {
     notifyListeners();
   }
 
+  void addAll(List<Tweet> tweets) {
+    this.tweets.addAll(tweets);
+    this.tweets.sort((a, b) => a.compareTo(b));
+    notifyListeners();
+  }
+
   Tweet tweetAt(int idx) => this.tweets[idx];
 
   bool remove(Tweet p) {

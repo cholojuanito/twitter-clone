@@ -45,16 +45,46 @@ class Tweet with ChangeNotifier implements Comparable<Tweet> {
     return this.created.compareTo(other.created);
   }
 
-  factory Tweet.fromJson(Map<String, dynamic> json) => Tweet(
-        json['authorId'] as String,
-        json['message'] as String,
-        id: json['id'],
-        hashtags: json['hashtags'],
-        mentions: json['mentions'],
-        urls: json['urls'],
-        media: json['media'],
-        created: DateTime.parse(json['created']),
-      );
+  factory Tweet.fromJson(Map<String, dynamic> json) {
+    var _h = json['hashtags'];
+    List<Hashtag> _hashtags = [];
+    if (_h != null) {
+      for (Map h in _h) {
+        _hashtags.add(Hashtag.fromJson(h));
+      }
+    }
+    var _m = json['mentions'];
+    List<Mention> _mentions = [];
+    if (_m != null) {
+      for (Map m in _m) {
+        _mentions.add(Mention.fromJson(m));
+      }
+    }
+
+    var _u = json['urls'];
+    List<ExternalURL> _urls = [];
+    if (_u != null) {
+      for (Map url in _u) {
+        _urls.add(ExternalURL.fromJson(url));
+      }
+    }
+
+    Media _media;
+    if (json['media'] != null) {
+      _media = Media.fromJson(json['media']);
+    }
+
+    return Tweet(
+      json['authorId'] as String,
+      json['message'] as String,
+      id: json['id'],
+      hashtags: _hashtags,
+      mentions: _mentions,
+      urls: _urls,
+      media: _media,
+      // created: DateTime.parse(json['created']),
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -63,7 +93,7 @@ class Tweet with ChangeNotifier implements Comparable<Tweet> {
         'hashtags': hashtags,
         'mentions': mentions,
         'urls': urls,
-        'media': media.route,
-        'created': created.toIso8601String()
+        'media': media,
+        'created': created?.toIso8601String()
       };
 }

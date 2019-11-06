@@ -1,15 +1,18 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:md2_tab_indicator/md2_tab_indicator.dart';
 import 'package:outline_material_icons/outline_material_icons.dart';
 import 'package:provider/provider.dart';
+import 'package:twitter_clone/models/tweet.dart';
 import 'package:twitter_clone/models/user.dart';
 import 'package:twitter_clone/services/api.dart';
 import 'package:twitter_clone/services/authentication.dart';
 import 'package:twitter_clone/theme/color.dart';
 import 'package:twitter_clone/theme/icons.dart';
 import 'package:twitter_clone/util/router.dart';
+import 'package:twitter_clone/vms/auth_vm.dart';
 import 'package:twitter_clone/vms/follow_vm.dart';
 import 'package:twitter_clone/vms/tweet_vm.dart';
 import 'package:twitter_clone/vms/list_view_vms.dart';
@@ -28,12 +31,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   final int _NUM_TABS = 4;
   Api _api;
   ProfileVM _vm;
-  AuthenticationService _auth;
-  // These are for referencing from the scroll listeners
-  ListViewVM _feedVM;
-  ListViewVM _storyVM;
-  ListViewVM _followersVM;
-  ListViewVM _followingVM;
+  AuthVM _auth;
 
   ScrollController _feedScrollCntrlr;
   ScrollController _storyScrollCntrlr;
@@ -43,6 +41,12 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void initState() {
     super.initState();
+    _vm = Provider.of<ProfileVM>(context, listen: false);
+    _vm.getInitialFeed();
+    _vm.getInitialStory();
+    _vm.getInitialFollowers();
+    _vm.getInitialFollowing();
+
     _feedScrollCntrlr = ScrollController();
     _storyScrollCntrlr = ScrollController();
     _followersScrollCntrlr = ScrollController();
@@ -71,6 +75,127 @@ class _ProfileScreenState extends State<ProfileScreen>
     super.dispose();
   }
 
+  Future _takeImage() async {
+    var image = await ImagePicker.pickImage(source: ImageSource.camera);
+
+    this._vm.changeProfilePic(image.path).then((res) {
+      var message = 'An error occurred. Could not update profile picture';
+      if (res) {
+        message = 'Profile picture updated';
+      }
+
+      // Scaffold.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text(message),
+      //   ),
+      // );
+    });
+
+    appNavKey.currentState.pop(); // Close modal
+  }
+
+  Future _getImage() async {
+    var image = await ImagePicker.pickImage(source: ImageSource.gallery);
+
+    this._vm.changeProfilePic(image.path);
+
+    appNavKey.currentState.pop(); // Close modal
+  }
+
+  Widget _buildBottomSheet(BuildContext context) {
+    // TODO Make into own widget class?
+    var _size = MediaQuery.of(context).size;
+    return Container(
+      height: _size.height * 0.33333,
+      // margin: const EdgeInsets.only(top: 8.0),
+      child: Column(
+        children: <Widget>[
+          Container(
+            width: _size.width,
+            margin: const EdgeInsets.symmetric(vertical: 8.0),
+            padding: const EdgeInsets.all(12.0),
+            child: Text(
+              'Change profile picture:',
+              style: TextStyle(
+                color: TwitterColor.black,
+                fontSize: 20,
+                fontWeight: FontWeight.normal,
+                fontStyle: FontStyle.normal,
+              ),
+            ),
+          ),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              width: _size.width,
+              margin: const EdgeInsets.symmetric(vertical: 8.0),
+              padding: const EdgeInsets.all(12.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.max,
+                children: <Widget>[
+                  Icon(
+                    OMIcons.cameraAlt,
+                    size: 32.0,
+                  ),
+                  Container(
+                    margin: const EdgeInsets.only(left: 8.0),
+                    child: Text(
+                      'Take a picture',
+                      style: TextStyle(
+                        color: TwitterColor.black,
+                        fontSize: 20,
+                        fontWeight: FontWeight.normal,
+                        fontStyle: FontStyle.normal,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            onTap: () {
+              _takeImage();
+            },
+          ),
+          Divider(
+            thickness: 2.0,
+            height: 5.0,
+          ),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 8.0),
+              padding: const EdgeInsets.all(12.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.max,
+                children: <Widget>[
+                  Icon(
+                    OMIcons.photoLibrary,
+                    size: 32.0,
+                  ),
+                  Container(
+                    margin: const EdgeInsets.only(left: 8.0),
+                    child: Text(
+                      'Select from gallery',
+                      style: TextStyle(
+                        color: TwitterColor.black,
+                        fontSize: 20,
+                        fontWeight: FontWeight.normal,
+                        fontStyle: FontStyle.normal,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            onTap: () {
+              _getImage();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   TabBar _buildTabBar() {
     return TabBar(
       controller: _tabController,
@@ -89,89 +214,157 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildTweetList(bool isFeed) {
-    return Consumer<TweetListVM>(
-      builder: (context, vm, child) {
-        var items = vm.items;
-        return ListView.builder(
-          controller: isFeed ? _feedScrollCntrlr : _storyScrollCntrlr,
-          itemCount: items.length + 1,
-          itemBuilder: (context, idx) {
-            if (items.isEmpty) {
-              return _buildEmptyListText();
-            } else if (idx == items.length) {
-              return _buildProgressIndicator(isFeed ? _feedVM : _storyVM);
-            } else {
-              var _tweetVm = TweetVM(items.elementAt(idx), _api);
-              return ChangeNotifierProvider<TweetVM>.value(
-                value: _tweetVm,
-                child: _tweetVm.tweet.media != null
-                    ? TweetListItem(
-                        mediaPath: _tweetVm.tweet.media.route,
-                        type: _tweetVm.tweet.media.type,
-                      )
-                    : TweetListItem(),
-              );
-            }
-          },
-        );
+    List<Tweet> items = isFeed ? _vm.feed.tweets : _vm.story.tweets;
+    return ListView.builder(
+      controller: isFeed ? _feedScrollCntrlr : _storyScrollCntrlr,
+      itemCount: items.length + 1,
+      itemBuilder: (context, idx) {
+        if (items.isEmpty) {
+          return _buildEmptyListText();
+        } else if (idx == items.length) {
+          return _buildProgressIndicator();
+        } else {
+          var t = items.elementAt(idx);
+          var _tweetVm = isFeed
+              ? TweetVM(t, _vm.tweetAuthors[t.id], _api)
+              : TweetVM(t, _vm.user, _api);
+          return ChangeNotifierProvider<TweetVM>.value(
+            value: _tweetVm,
+            child: _tweetVm.tweet.media != null
+                ? TweetListItem(
+                    mediaPath: _tweetVm.tweet.media.route,
+                    type: _tweetVm.tweet.media.type,
+                  )
+                : TweetListItem(),
+          );
+        }
       },
     );
+    // return FutureBuilder(
+    //   future: isFeed ? _vm.getInitialFeed() : _vm.getInitialStory(),
+    //   builder: (context, snapshot) {
+    //     switch (snapshot.connectionState) {
+    //       case ConnectionState.done:
+    //         if (snapshot.hasError) {
+    //           return Center(
+    //             child: Text('Something bad happened'),
+    //           );
+    //         } else if (snapshot.hasData && !snapshot.hasError) {
+    //           List<Tweet> items = isFeed ? _vm.feed.tweets : _vm.story.tweets;
+    //           return ListView.builder(
+    //             controller: isFeed ? _feedScrollCntrlr : _storyScrollCntrlr,
+    //             itemCount: items.length + 1,
+    //             itemBuilder: (context, idx) {
+    //               if (items.isEmpty) {
+    //                 return _buildEmptyListText();
+    //               } else if (idx == items.length) {
+    //                 return _buildProgressIndicator();
+    //               } else {
+    //                 var t = items.elementAt(idx);
+    //                 var _tweetVm = isFeed
+    //                     ? TweetVM(t, _vm.tweetAuthors[t.id], _api)
+    //                     : TweetVM(t, _vm.user, _api);
+    //                 return ChangeNotifierProvider<TweetVM>.value(
+    //                   value: _tweetVm,
+    //                   child: _tweetVm.tweet.media != null
+    //                       ? TweetListItem(
+    //                           mediaPath: _tweetVm.tweet.media.route,
+    //                           type: _tweetVm.tweet.media.type,
+    //                         )
+    //                       : TweetListItem(),
+    //                 );
+    //               }
+    //             },
+    //           );
+    //         }
+    //         break;
+    //       case ConnectionState.active:
+    //       case ConnectionState.waiting:
+    //       // case ConnectionState.none:
+    //       default:
+    //         return Center(
+    //           child: CircularProgressIndicator(),
+    //         );
+    //     }
+    //   },
+    // );
   }
 
   Widget _buildFollowingList(bool isFollowersList) {
-    return Consumer<FollowingListVM>(
-      builder: (context, vm, _) {
-        return FutureBuilder(
-          future: vm.initUsers(),
-          builder: (context, snapshot) {
-            switch (snapshot.connectionState) {
-              case ConnectionState.done:
-                var items = vm.items;
-                return ListView.builder(
-                  itemCount: vm.users.length + 1,
-                  itemBuilder: (context, idx) {
-                    if (items.isEmpty) {
-                      return _buildEmptyListText();
-                    } else if (idx == items.length) {
-                      return _buildProgressIndicator(
-                          isFollowersList ? _followersVM : _followingVM);
-                    } else {
-                      var u = vm.users.elementAt(idx);
-                      var f = isFollowersList
-                          ? items.firstWhere((f) => u.id == f.followerId,
-                              orElse: null)
-                          : items.firstWhere((f) => u.id == f.followeeId,
-                              orElse: null);
-                      return ChangeNotifierProvider<FollowingVM>(
-                        builder: (_) => FollowingVM(
-                          _auth.getCurrentUser(),
-                          u,
-                          _api,
-                          theFollowing: f,
-                        ),
-                        child: UserListItem(),
-                      );
-                    }
-                  },
-                );
-                break;
-              default:
-                return Center(
-                  child: CircularProgressIndicator(),
-                );
-            }
-          },
-        );
+    var items = isFollowersList ? _vm.followersUsers : _vm.followingUsers;
+    return ListView.builder(
+      itemCount: items.length + 1,
+      itemBuilder: (context, idx) {
+        if (items.isEmpty) {
+          return _buildEmptyListText();
+        } else if (idx == items.length) {
+          return _buildProgressIndicator();
+        } else {
+          var u = items.elementAt(idx);
+          return ChangeNotifierProvider<FollowingVM>(
+            builder: (_) => FollowingVM(
+              _vm.loggedInUser,
+              u,
+              _api,
+              // theFollowing: f,
+            ),
+            child: UserListItem(),
+          );
+        }
       },
     );
+    // return Consumer<FollowingListVM>(
+    //   builder: (context, vm, _) {
+    //     return FutureBuilder(
+    //       future: vm.initUsers(),
+    //       builder: (context, snapshot) {
+    //         switch (snapshot.connectionState) {
+    //           case ConnectionState.done:
+    //             var items = vm.items;
+    //             return ListView.builder(
+    //               itemCount: vm.users.length + 1,
+    //               itemBuilder: (context, idx) {
+    //                 if (items.isEmpty) {
+    //                   return _buildEmptyListText();
+    //                 } else if (idx == items.length) {
+    //                   return _buildProgressIndicator();
+    //                 } else {
+    //                   var u = vm.users.elementAt(idx);
+    //                   var f = isFollowersList
+    //                       ? items.firstWhere((f) => u.id == f.followerId,
+    //                           orElse: null)
+    //                       : items.firstWhere((f) => u.id == f.followeeId,
+    //                           orElse: null);
+    //                   return ChangeNotifierProvider<FollowingVM>(
+    //                     builder: (_) => FollowingVM(
+    //                       _vm.loggedInUser,
+    //                       u,
+    //                       _api,
+    //                       theFollowing: f,
+    //                     ),
+    //                     child: UserListItem(),
+    //                   );
+    //                 }
+    //               },
+    //             );
+    //             break;
+    //           default:
+    //             return Center(
+    //               child: CircularProgressIndicator(),
+    //             );
+    //         }
+    //       },
+    //     );
+    //   },
+    // );
   }
 
-  Widget _buildProgressIndicator(ListViewVM listVM) {
+  Widget _buildProgressIndicator() {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Center(
         child: Opacity(
-          opacity: listVM.isLoading ? 1.0 : 0.0,
+          opacity: _vm.isLoading ? 1.0 : 0.0,
           child: CircularProgressIndicator(),
         ),
       ),
@@ -197,33 +390,29 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   Widget build(BuildContext context) {
     _vm = Provider.of<ProfileVM>(context);
-    _auth = Provider.of<AuthenticationService>(context);
+    _auth = Provider.of<AuthVM>(context);
     _api = Provider.of<Api>(context);
-    // For checking if the user profile to display is that of the
-    // currently logged in user
-    bool _isLoggedInUser = _vm.user.alias == _auth.getCurrentUser()?.alias;
-
-    _feedVM =
-        TweetListVM(_vm.user.feed.tweets, _auth, _api, TweetListType.feed);
-    _storyVM =
-        TweetListVM(_vm.user.story.tweets, _auth, _api, TweetListType.story);
-    _followersVM = FollowingListVM(
-        _vm.user.followers, _auth, _api, FollowListType.followers);
-    _followingVM = FollowingListVM(
-        _vm.user.following, _auth, _api, FollowListType.following);
 
     return Scaffold(
       appBar: AppBar(
-        leading: _isLoggedInUser
-            ? Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-                child: CircleAvatar(
-                  backgroundImage:
-                      _vm.user.profilePic.route == User.defaultProfileURL
-                          ? AssetImage(_vm.user.profilePic.route)
-                          : FileImage(
-                              File(_vm.user.profilePic.route),
-                            ), //TODO change to network
+        leading: _vm.isHomeScreen
+            ? GestureDetector(
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    builder: _buildBottomSheet,
+                  );
+                },
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                  child: CircleAvatar(
+                    backgroundImage:
+                        _vm.user.profilePic.route == User.defaultProfileURL
+                            ? AssetImage(_vm.user.profilePic.route)
+                            : NetworkImage(
+                                _vm.user.profilePic.route,
+                              ),
+                  ),
                 ),
               )
             : IconButton(
@@ -238,7 +427,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             // Text('${_vm.user.story.tweets.length} tweets')
           ],
         ),
-        actions: _isLoggedInUser
+        actions: _vm.isHomeScreen
             ? <Widget>[
                 IconButton(
                   // TODO implement search
@@ -259,25 +448,13 @@ class _ProfileScreenState extends State<ProfileScreen>
       body: TabBarView(
         controller: _tabController,
         children: <Widget>[
-          ChangeNotifierProvider<TweetListVM>.value(
-            value: _feedVM,
-            child: _buildTweetList(true),
-          ),
-          ChangeNotifierProvider<TweetListVM>.value(
-            value: _storyVM,
-            child: _buildTweetList(false),
-          ),
-          ChangeNotifierProvider<FollowingListVM>.value(
-            value: _followersVM,
-            child: _buildFollowingList(true),
-          ),
-          ChangeNotifierProvider<FollowingListVM>.value(
-            value: _followingVM,
-            child: _buildFollowingList(false),
-          ),
+          _buildTweetList(true),
+          _buildTweetList(false),
+          _buildFollowingList(true),
+          _buildFollowingList(false),
         ],
       ),
-      floatingActionButton: _isLoggedInUser
+      floatingActionButton: _vm.isHomeScreen
           ? FloatingActionButton(
               backgroundColor: TwitterColor.cerulean,
               child: Icon(
@@ -285,12 +462,16 @@ class _ProfileScreenState extends State<ProfileScreen>
                 color: TwitterColor.white,
               ),
               onPressed: () {
-                appNavKey.currentState.pushNamed(
+                appNavKey.currentState
+                    .pushNamed<Tweet>(
                   createTweetRoute,
                   arguments: CreateTweetRouteArguments(
-                    _auth.getCurrentUser(),
+                    _vm.loggedInUser,
                   ),
-                );
+                )
+                    .then((Tweet ret) {
+                  _vm.addMoreToStory([ret]);
+                });
               },
             )
           : Container(),
@@ -300,7 +481,9 @@ class _ProfileScreenState extends State<ProfileScreen>
   void _feedScrollListener() {
     if (_feedScrollCntrlr.position.pixels ==
         _feedScrollCntrlr.position.maxScrollExtent) {
-      _feedVM.getMoreItems();
+      if (!_vm.isLoading) {
+        _vm.getMoreFeed();
+      }
     }
   }
 
@@ -308,7 +491,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     if (_storyScrollCntrlr.position.pixels ==
         _storyScrollCntrlr.position.maxScrollExtent) {
       if (!_vm.isLoading) {
-        _storyVM.getMoreItems();
+        _vm.getMoreStory();
       }
     }
   }
@@ -316,16 +499,18 @@ class _ProfileScreenState extends State<ProfileScreen>
   void _followersScrollListener() {
     if (_followersScrollCntrlr.position.pixels ==
         _followersScrollCntrlr.position.maxScrollExtent) {
-      _vm.setLoadingState(true);
-      _followersVM.getMoreItems().then((resp) => _vm.setLoadingState(false));
+      if (!_vm.isLoading) {
+        _vm.getMoreFollowers();
+      }
     }
   }
 
   void _followingScrollListener() {
     if (_followingScrollCntrlr.position.pixels ==
         _followingScrollCntrlr.position.maxScrollExtent) {
-      _vm.setLoadingState(true);
-      _followingVM.getMoreItems().then((resp) => _vm.setLoadingState(false));
+      if (!_vm.isLoading) {
+        _vm.getMoreFollowing();
+      }
     }
   }
 }

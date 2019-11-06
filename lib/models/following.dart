@@ -13,4 +13,22 @@ class Following {
       this.startDate = DateTime.now();
     }
   }
+
+  factory Following.fromJson(Map<String, dynamic> json) {
+    return Following(
+      json['followerId'] as String,
+      json['followeeId'] as String,
+      id: json['id'] as String,
+      isActive: json['isActive'] as bool,
+      startDate: DateTime.parse(json['startDate']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'followerId': followerId,
+        'followeeId': followeeId,
+        'isActive': isActive,
+        'startDate': startDate?.toIso8601String(),
+      };
 }

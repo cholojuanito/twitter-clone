@@ -1,8 +1,8 @@
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
-import 'package:twitter_clone/screens/login_screen.dart';
-import 'package:twitter_clone/dummy_data.dart' as db;
 import 'package:twitter_clone/services/api.dart';
 import 'package:twitter_clone/services/authentication.dart';
 import 'package:twitter_clone/services/aws_api.dart';
@@ -15,7 +15,13 @@ void main() {
   final AuthenticationService _authService = FirebaseAuthenticationService();
   final Api _twitterApi = AWSTwitterApi(_authService);
   _authService..api = _twitterApi;
-  db.initDummyData();
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  FlutterError.onError = (FlutterErrorDetails details) {
+    Crashlytics.instance.recordFlutterError(details);
+  };
   runApp(TwitterClone(_twitterApi, _authService));
 }
 
@@ -45,7 +51,7 @@ class TwitterClone extends StatelessWidget {
               theme: ThemeData(
                 primarySwatch: Colors.blue,
               ),
-              home: LoginScreen(),
+              // home: LoginScreen(service),
               onGenerateRoute: generateRoute,
               initialRoute: initialRoute,
               navigatorKey: appNavKey,

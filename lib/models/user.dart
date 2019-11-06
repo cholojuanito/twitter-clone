@@ -58,26 +58,21 @@ class User with ChangeNotifier {
   }
 
   factory User.fromJson(Map<String, dynamic> json) {
-    // List<Following> _followers = [];
-    // var jsonFollowers = json['followers'];
-    // List<Following> _following = [];
+    Media _media = Media.fromJson(json['profilePic']);
 
     return User(
       json['alias'] as String,
-      json['fullName'] as String,
+      json['name'] as String,
       id: json['id'] as String,
-      profilePic: Media(json['photoURL'], MediaType.Image),
-      // json['followers'],
-      // json['following'],
-      // json['created'] as DateTime,
+      profilePic: _media,
     );
   }
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'alias': alias,
-        'fullName': _fullName,
-        'photoURL': profilePic.route,
+        'name': _fullName,
+        'profilePic': profilePic.toJson(),
         'created': created?.toIso8601String(),
       };
 }

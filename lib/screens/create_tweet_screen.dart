@@ -69,6 +69,10 @@ class _CreateTweetScreenState extends State<CreateTweetScreen> {
         _mediaFile = video;
         _videoThumbnailPath = thumbPath;
       });
+    }, onError: () {
+      print('An error occurred in then');
+    }).catchError((err) {
+      print('An error occurred in catchError');
     });
   }
 
@@ -103,22 +107,27 @@ class _CreateTweetScreenState extends State<CreateTweetScreen> {
                   color: TwitterColor.dodgetBlue,
                   onPressed: _canTweet
                       ? () {
-                          vm
-                              .create(
-                            _tweetCntrlr.text,
-                            mediaPath: _mediaFile?.path,
-                            type: _isVideo ? MediaType.Video : MediaType.Image,
-                          )
-                              .then(
-                            (res) => appNavKey.currentState.pop(context),
-                            onError: (e) {
-                              Scaffold.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Something bad happened!'),
-                                ),
-                              );
-                            },
-                          );
+                          try {
+                            vm
+                                .create(
+                              _tweetCntrlr.text,
+                              mediaPath: _mediaFile?.path,
+                              type:
+                                  _isVideo ? MediaType.Video : MediaType.Image,
+                            )
+                                .then(
+                              (res) => appNavKey.currentState.pop(res),
+                              onError: (e) {
+                                Scaffold.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('An error occurred!'),
+                                  ),
+                                );
+                              },
+                            );
+                          } catch (err) {
+                            // Show message
+                          }
                         }
                       : null,
                   child: Text(
@@ -278,16 +287,17 @@ class _CreateTweetScreenState extends State<CreateTweetScreen> {
                     tooltip: 'Pick a photo',
                     onPressed: _mediaFile == null ? _onGetImagePressed : null,
                   ),
-                  IconButton(
-                    icon: Icon(
-                      OMIcons.videocam,
-                    ),
-                    color: TwitterColor.cerulean,
-                    disabledColor: TwitterColor.mystic,
-                    iconSize: 32.0,
-                    tooltip: 'Pick a video',
-                    onPressed: _mediaFile == null ? _onGetVideoPressed : null,
-                  ),
+                  // TODO BUG REPORT FOR VIDEO FILES
+                  // IconButton(
+                  //   icon: Icon(
+                  //     OMIcons.videocam,
+                  //   ),
+                  //   color: TwitterColor.cerulean,
+                  //   disabledColor: TwitterColor.mystic,
+                  //   iconSize: 32.0,
+                  //   tooltip: 'Pick a video',
+                  //   onPressed: _mediaFile == null ? _onGetVideoPressed : null,
+                  // ),
                 ],
               ),
             ),
