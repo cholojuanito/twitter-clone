@@ -1,3 +1,4 @@
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:twitter_clone/models/linked_items.dart';
@@ -12,11 +13,12 @@ import 'package:twitter_clone/screens/tweet_screen.dart';
 import 'package:twitter_clone/services/api.dart';
 import 'package:twitter_clone/services/authentication.dart';
 import 'package:twitter_clone/vms/create_tweet_vm.dart';
-import 'package:twitter_clone/vms/list_view_vms.dart';
+import 'package:twitter_clone/vms/hashtag_vm.dart';
 import 'package:twitter_clone/vms/profile_vm.dart';
 import 'package:twitter_clone/vms/tweet_vm.dart';
 
 const String initialRoute = '/';
+const String homeRoute = 'home';
 const String signUpRoute = 'signup';
 const String profileRoute = 'profile';
 const String hashtagRoute = 'hashtag';
@@ -28,7 +30,30 @@ final GlobalKey<NavigatorState> appNavKey = GlobalKey<NavigatorState>();
 Route<dynamic> generateRoute(RouteSettings settings) {
   switch (settings.name) {
     case initialRoute:
-      return MaterialPageRoute(builder: (_) => LoginScreen());
+      return MaterialPageRoute(
+        builder: (context) {
+          var _auth = Provider.of<AuthenticationService>(context);
+          return LoginScreen(_auth);
+        },
+      );
+      break;
+
+    case homeRoute:
+      return MaterialPageRoute(
+        builder: (context) {
+          var _api = Provider.of<Api>(context);
+          var _auth = Provider.of<AuthenticationService>(context);
+          return ChangeNotifierProvider<ProfileVM>(
+            builder: (_) => ProfileVM(
+              _auth.getCurrentUserSync(),
+              _auth.getCurrentUserSync(),
+              _api,
+              isHomeScreen: true,
+            ),
+            child: ProfileScreen(),
+          );
+        },
+      );
       break;
 
     case signUpRoute:
@@ -40,8 +65,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(
         builder: (context) {
           var _api = Provider.of<Api>(context);
+          var _auth = Provider.of<AuthenticationService>(context);
           return ChangeNotifierProvider<ProfileVM>(
-            builder: (_) => ProfileVM(_args.user, _api),
+            builder: (_) =>
+                ProfileVM(_args.user, _auth.getCurrentUserSync(), _api),
             child: ProfileScreen(),
           );
         },
@@ -53,7 +80,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(
         builder: (context) {
           var _api = Provider.of<Api>(context);
-          var _vm = TweetVM(_args.tweet, _api, enlargeText: true);
+          var _auth = Provider.of<AuthenticationService>(context);
+          var _vm = TweetVM(_args.tweet, _args.author, _api, enlargeText: true);
           return ChangeNotifierProvider<TweetVM>.value(
             value: _vm,
             child: _vm.tweet.media != null
@@ -69,7 +97,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
 
     case createTweetRoute:
       CreateTweetRouteArguments _args = settings.arguments;
-      return MaterialPageRoute(
+      return MaterialPageRoute<Tweet>(
         builder: (context) {
           var _api = Provider.of<Api>(context);
           return Provider<CreateTweetVM>(
@@ -82,29 +110,16 @@ Route<dynamic> generateRoute(RouteSettings settings) {
 
     case hashtagRoute:
       HashtagRouteArguments _args = settings.arguments;
-      return MaterialPageRoute(builder: (context) {
-        var _api = Provider.of<Api>(context);
-        var _auth = Provider.of<AuthenticationService>(context);
-        return FutureBuilder(
-            future: _api.getTweetsByHashtag(_args.hashtag.word),
-            builder: (context, snapshot) {
-              switch (snapshot.connectionState) {
-                case ConnectionState.done:
-                  var _vm = TweetListVM(
-                      snapshot.data, _auth, _api, TweetListType.hashtag,
-                      hashtag: _args.hashtag.word);
-                  return ChangeNotifierProvider<TweetListVM>.value(
-                    value: _vm,
-                    child: HashtagScreen(_args.hashtag.word),
-                  );
-                  break;
-                default:
-                  return Center(
-                    child: CircularProgressIndicator(),
-                  );
-              }
-            });
-      });
+      return MaterialPageRoute(
+        builder: (context) {
+          var _api = Provider.of<Api>(context);
+          var _vm = HashtagVM(_args.hashtag.word, _api);
+          return ChangeNotifierProvider<HashtagVM>.value(
+            value: _vm,
+            child: HashtagScreen(),
+          );
+        },
+      );
 
     default:
       return MaterialPageRoute(
