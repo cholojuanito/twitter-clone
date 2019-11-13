@@ -1,4 +1,3 @@
-import 'package:twitter_clone/dummy_data.dart';
 import 'package:twitter_clone/models/user.dart';
 import 'package:twitter_clone/services/authentication.dart';
 import 'package:twitter_clone/util/auth_util.dart';
@@ -22,7 +21,7 @@ class AWSAuthenticationService extends AuthenticationService {
   }
 
   @override
-  User getCurrentUser() {
+  Future<User> getCurrentUserAsync() async {
     return this.currUser;
   }
 
@@ -87,5 +86,11 @@ class AWSAuthenticationService extends AuthenticationService {
   void signOut() {
     this.currUser = null;
     notifyListeners();
+  }
+
+  @override
+  User getCurrentUserSync() {
+    // TODO: implement getCurrentUserSync
+    return null;
   }
 }

@@ -2,6 +2,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:twitter_clone/services/authentication.dart';
+import 'package:twitter_clone/theme/color.dart';
 import 'package:twitter_clone/util/router.dart';
 
 import 'package:twitter_clone/vms/auth_vm.dart';
@@ -18,6 +19,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   AuthenticationService authService;
   _LoginScreenState(this.authService);
+
+  BuildContext _context;
 
   TextEditingController _loginAliasCntrlr;
   TextEditingController _loginPasswordCntrlr;
@@ -55,6 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    this._context = context;
     return Scaffold(
       body: Consumer<AuthVM>(
         builder: (context, vm, _) {
@@ -96,12 +100,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             )
                                 .then(
                               (resp) {
-                                Scaffold.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(resp.message),
-                                  ),
-                                );
-
                                 // Reroute to the 'home' Profile Screen
                                 if (resp.status == 0) {
                                   Crashlytics.instance.setUserIdentifier(
@@ -110,6 +108,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                       vm.getCurrentUser().fullName);
                                   appNavKey.currentState
                                       .pushReplacementNamed(homeRoute);
+                                } else {
+                                  Scaffold.of(this._context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        resp.message,
+                                      ),
+                                      backgroundColor: TwitterColor.ceriseRed,
+                                    ),
+                                  );
                                 }
                               },
                             );

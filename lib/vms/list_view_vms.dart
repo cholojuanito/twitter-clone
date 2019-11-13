@@ -8,8 +8,6 @@ import 'package:twitter_clone/services/api.dart';
 import 'package:twitter_clone/services/authentication.dart';
 import 'package:twitter_clone/vms/base_vm.dart';
 
-import '../dummy_data.dart';
-
 abstract class ListViewVM<T> extends BaseVM {
   static const int ITEMS_PER_PAGE = 10;
   int currPageNum = 1;
@@ -34,15 +32,15 @@ class TweetListVM extends ListViewVM<Tweet> with ChangeNotifier {
       : super(items);
 
   @override
-  Future getMoreItems() async {
+  Future<List<Tweet>> getMoreItems() async {
     setLoadingState(true);
     notifyListeners();
 
     List<Tweet> nextItems = [];
     if (type == TweetListType.feed) {
-      nextItems = await api.getFeed(authService.getCurrentUser().id);
+      nextItems = await api.getFeed(authService.getCurrentUserSync().id);
     } else if (type == TweetListType.story) {
-      nextItems = await api.getStory(authService.getCurrentUser().id);
+      nextItems = await api.getStory(authService.getCurrentUserSync().id);
     } else {
       nextItems = await api.getTweetsByHashtag(hashtag);
     }
@@ -53,7 +51,7 @@ class TweetListVM extends ListViewVM<Tweet> with ChangeNotifier {
 
     setLoadingState(false);
     notifyListeners();
-    return null;
+    return nextItems;
   }
 
   @override

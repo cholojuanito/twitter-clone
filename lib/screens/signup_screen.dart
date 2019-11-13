@@ -23,6 +23,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   TextEditingController _signUpPasswordCntrlr;
   bool _canSignUp = false;
 
+  BuildContext _context;
+
   File _profilePic;
   var _pickImageError;
 
@@ -73,6 +75,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: LayoutBuilder(builder: (context, constraints) {
+        this._context = context;
         return SingleChildScrollView(
           child: ConstrainedBox(
             constraints: BoxConstraints(
@@ -287,6 +290,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
           Crashlytics.instance.setUserIdentifier(vm.getCurrentUser().id);
           Crashlytics.instance.setUserName(vm.getCurrentUser().fullName);
           appNavKey.currentState.pushReplacementNamed(homeRoute);
+        } else {
+          Scaffold.of(this._context).showSnackBar(
+            SnackBar(
+              content: Text(resp.message),
+              backgroundColor: TwitterColor.ceriseRed,
+            ),
+          );
         }
       },
     );

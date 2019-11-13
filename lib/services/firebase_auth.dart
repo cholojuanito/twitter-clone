@@ -133,8 +133,13 @@ class FirebaseAuthenticationService extends AuthenticationService {
       await result.user.updateProfile(updateInfo);
       User newUser = profilePicPath != null
           ? User(alias, name,
+              id: result.user.uid,
               profilePic: Media(profilePicPath, MediaType.Image))
-          : User(alias, name);
+          : User(
+              alias,
+              name,
+              id: result.user.uid,
+            );
       this.currUser = await _api.createUser(newUser);
       // Build state?
       resp = AuthResponse(0, 'Successfully logged in');
