@@ -1,5 +1,5 @@
 # twitter-clone | Twitter Clone
-A Twitter clone written in Flutter and that uses various Amazon Web Services. I made it for my Software Design and Testing course.
+A Twitter clone written in Flutter and that uses various Amazon Web Services.
 
 # Design Patterns Utilized
 * Observer
